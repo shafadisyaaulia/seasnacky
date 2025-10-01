@@ -12,7 +12,11 @@ import {
 import { getDashboardSnapshot } from "@/lib/services/dashboard";
 import { formatCurrency } from "@/lib/utils";
 
+// PERBAIKAN: Menambahkan pemeriksaan untuk nilai negatif untuk mencegah RangeError
 function formatNumber(value: number) {
+  if (value < 0) {
+    return "0";
+  }
   return new Intl.NumberFormat("id-ID").format(value);
 }
 
@@ -387,5 +391,4 @@ export default async function AdminPage() {
       </div>
     </div>
   );
-}
-
+} 

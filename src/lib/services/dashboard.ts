@@ -4,6 +4,18 @@ import ProductModel from "../models/Product";
 import UserModel from "../models/User";
 import ReviewModel from "../models/Review";
 
+// Menambahkan interface untuk memastikan tipe data yang lebih kuat
+interface OrderMetric {
+  _id: string | null;
+  count: number;
+  revenue?: number;
+}
+
+interface StatusMetric {
+  _id: string | null;
+  count: number;
+}
+
 export async function getDashboardSnapshot() {
   await connectToDatabase();
 
@@ -71,13 +83,17 @@ export async function getDashboardSnapshot() {
     ReviewModel.countDocuments({}),
   ]);
 
-  const revenueTotal = orderMetrics.reduce((sum, item) => sum + (item.revenue ?? 0), 0);
-  const orderStatus = orderMetrics.reduce<Record<string, number>>((acc, item) => {
+  // PERBAIKAN: Menambahkan tipe eksplisit pada parameter 'sum' and 'item'
+  const revenueTotal = (orderMetrics as OrderMetric[]).reduce((sum: number, item: OrderMetric) => sum + (item.revenue ?? 0), 0);
+
+  // PERBAIKAN: Menambahkan tipe eksplisit pada parameter 'acc' and 'item'
+  const orderStatus = (orderMetrics as OrderMetric[]).reduce<Record<string, number>>((acc: Record<string, number>, item: OrderMetric) => {
     acc[item._id ?? "unknown"] = item.count;
     return acc;
   }, {});
 
-  const fulfillmentStatus = statusMetrics.reduce<Record<string, number>>((acc, item) => {
+  // PERBAIKAN: Menambahkan tipe eksplisit pada parameter 'acc' and 'item'
+  const fulfillmentStatus = (statusMetrics as StatusMetric[]).reduce<Record<string, number>>((acc: Record<string, number>, item: StatusMetric) => {
     acc[item._id ?? "unknown"] = item.count;
     return acc;
   }, {});
