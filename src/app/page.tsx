@@ -129,7 +129,7 @@ export default async function Home() {
     },
   ];
 
-  const testimonials = reviews.map((review: Review & { user: User }) => ({
+  const testimonials = reviews.map((review) => ({
     name:
       typeof review.user === "object" && review.user?.name
         ? review.user.name
