@@ -64,7 +64,7 @@ export default async function Home() {
 
   const featuredProducts = dashboard.topProducts
     .slice(0, 3)
-    .map((product: any) => ({
+    .map((product: { name: string; rating?: number; quantity?: number; revenue?: number }) => ({
       name: product.name,
       rating: product.rating ?? 4.8,
       orders: product.quantity ?? 0,

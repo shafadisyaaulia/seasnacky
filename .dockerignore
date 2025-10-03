@@ -1,0 +1,23 @@
+# File Docker itu sendiri
+Dockerfile
+.dockerignore
+
+# Dependensi
+node_modules
+
+# Next.js build artifacts
+.next/
+out/
+
+# Log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# File environment
+.env*
+
+# Lainnya
+.DS_Store
+README.md
