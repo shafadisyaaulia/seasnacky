@@ -16,7 +16,10 @@ export default function UserLoginPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setMessage("Sedang memproses login...");
+    setMessage("Mengalihkan ke dasbor...");
+
+    // Baris-baris di bawah ini kita jadikan komentar atau hapus
+    /*
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -30,6 +33,10 @@ export default function UserLoginPage() {
       const result = await response.json();
       setMessage(result.message ?? "Login gagal. Silakan coba lagi.");
     }
+    */
+
+    // Langsung arahkan ke halaman dasbor tanpa login
+    window.location.href = "/user";
   };
 
   return (

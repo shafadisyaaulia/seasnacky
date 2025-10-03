@@ -1,5 +1,4 @@
-﻿// src/app/admin/page.tsx
-import Link from "next/link";
+﻿import Link from "next/link";
 import { AdminQuickActions } from "@/components/admin/AdminQuickActions";
 import {
   listProducts,
@@ -11,6 +10,7 @@ import {
   users,
 } from "@/app/api/_data/mockData";
 import { formatCurrency } from "@/lib/utils";
+import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 
 function formatNumber(value: number) {
   if (value < 0) {
@@ -91,12 +91,7 @@ export default async function AdminPage() {
               >
                 Endpoint Insights
               </Link>
-              <Link
-                href="/"
-                className="rounded-full border border-blue-200 px-5 py-3 text-blue-600 transition hover:border-blue-500 hover:text-blue-700"
-              >
-                Lihat Landing
-              </Link>
+              <AdminLogoutButton />
             </div>
           </header>
 

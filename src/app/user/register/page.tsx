@@ -15,17 +15,24 @@ export default function UserRegisterPage() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setMessage("Mendaftarkan akun...");
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+const handleSubmit = async (event: React.FormEvent) => {
+  event.preventDefault();
+  setMessage("Mendaftarkan akun...");
+  const response = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(form),
+  });
+
+  // Tambahkan pengecekan ini
+  if (response.ok) {
+    setMessage("Pendaftaran berhasil! Mengalihkan ke dasbor...");
+    window.location.href = "/user"; // Arahkan ke dasbor
+  } else {
     const result = await response.json();
-    setMessage(result.message ?? "Pendaftaran selesai.");
-  };
+    setMessage(result.message ?? "Pendaftaran gagal.");
+  }
+};
 
   return (
     <div className="min-h-screen bg-white pb-20">

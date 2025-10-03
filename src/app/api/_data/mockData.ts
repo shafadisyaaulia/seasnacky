@@ -83,6 +83,15 @@ export const users: User[] = [
     loyaltyPoints: 920,
     orders: ["INV-9655"],
   },
+    {
+    id: "adm-001",
+    name: "Admin SeaSnacky",
+    email: "admin@seasnacky.id",
+    password: "adminpassword",
+    address: "Kantor Pusat SeaSnacky",
+    loyaltyPoints: 0,
+    orders: [],
+  },
 ];
 
 const products: Product[] = [

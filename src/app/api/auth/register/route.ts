@@ -1,6 +1,9 @@
+// src/app/api/auth/register/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { registerUser } from "../../_data/mockData";
 import { registerSchema } from "@/lib/validators";
+import { createSessionResponse } from "@/lib/session"; // <-- 1. Impor fungsi ini
 
 export async function POST(request: NextRequest) {
   const payload = await request.json();
@@ -22,7 +25,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json(
+  // 2. Ganti blok return yang lama dengan ini
+  // Langsung buat sesi untuk pengguna baru
+  return await createSessionResponse(
+    { sub: newUser.id, email: newUser.email, role: "user" },
     {
       message: "Registrasi berhasil.",
       data: {

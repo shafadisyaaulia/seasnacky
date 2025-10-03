@@ -1,7 +1,7 @@
 ﻿import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getAuthUser } from "@/lib/session";
-import { getUserById } from "@/app/api/_data/mockData";
+// import { redirect } from "next/navigation";
+// import { getAuthUser } from "@/lib/session";
+// import { getUserById } from "@/app/api/_data/mockData";
 
 // Data statis yang bisa Anda ubah nanti
 const orderTimeline = [
@@ -20,21 +20,31 @@ const educationShortlist = [
 ];
 
 export default async function UserDashboardPage() {
-  const authUser = await getAuthUser();
+  // const authUser = await getAuthUser();
 
-  // Jika tidak ada sesi login, arahkan ke halaman login.
-  if (!authUser) {
-    redirect("/user/login");
-  }
+  // // Jika tidak ada sesi login, arahkan ke halaman login.
+  // if (!authUser) {
+  //   redirect("/user/login");
+  // }
 
-  // Jika ada sesi, cari detail pengguna di data
-  const user = getUserById(authUser.sub);
+  // // Jika ada sesi, cari detail pengguna di data
+  // const user = getUserById(authUser.sub);
 
-  // Jika sesi ada tapi data user (karena restart server) tidak ditemukan, arahkan juga ke login
-  if (!user) {
-    redirect("/user/login");
-  }
+  // // Jika sesi ada tapi data user (karena restart server) tidak ditemukan, arahkan juga ke login
+  // if (!user) {
+  //   redirect("/user");
+  // }
 
+    // Buat data pengguna palsu untuk keperluan demo
+  const user = {
+    id: "usr-demo",
+    name: "Pengguna Demo",
+    email: "demo@seasnacky.id",
+    address: "Jalan Demo No. 123",
+    loyaltyPoints: 1500,
+    orders: ["INV-DEMO-1", "INV-DEMO-2"],
+  };
+  
   const profileHighlights = [
     { label: "Total Pesanan", value: user.orders.length.toString(), detail: "12 bulan terakhir" },
     { label: "Voucher Aktif", value: "4", detail: "Siap digunakan" },
