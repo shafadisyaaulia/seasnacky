@@ -1,112 +1,52 @@
-import { connectToDatabase } from "../db";
-import OrderModel from "../models/Order";
-import ProductModel from "../models/Product";
-import UserModel from "../models/User";
-import ReviewModel from "../models/Review";
-
-// Menambahkan interface untuk memastikan tipe data yang lebih kuat
-interface OrderMetric {
-  _id: string | null;
-  count: number;
-  revenue?: number;
-}
-
-interface StatusMetric {
-  _id: string | null;
-  count: number;
-}
+import {
+  getDashboardSummary as getMockDashboardSummary,
+  getTopProducts,
+  listProducts,
+  users,
+  listReviews,
+  listOrders,
+} from "@/app/api/_data/mockData";
 
 export async function getDashboardSnapshot() {
-  await connectToDatabase();
+  const summary = getMockDashboardSummary();
+  const topProducts = getTopProducts();
+  const ratingLeaders = listProducts()
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 5);
 
-  const [orderMetrics, statusMetrics, topProducts, ratingLeaders, activeUsers, reviewCount] = await Promise.all([
-    OrderModel.aggregate([
-      {
-        $group: {
-          _id: "$paymentStatus",
-          count: { $sum: 1 },
-          revenue: {
-            $sum: {
-              $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$grandTotal", 0],
-            },
-          },
-        },
-      },
-    ]),
-    OrderModel.aggregate([
-      {
-        $group: {
-          _id: "$status",
-          count: { $sum: 1 },
-        },
-      },
-    ]),
-    OrderModel.aggregate([
-      { $unwind: "$items" },
-      {
-        $group: {
-          _id: "$items.product",
-          revenue: { $sum: "$items.subtotal" },
-          quantity: { $sum: "$items.quantity" },
-        },
-      },
-      { $sort: { revenue: -1 } },
-      { $limit: 5 },
-      {
-        $lookup: {
-          from: "products",
-          localField: "_id",
-          foreignField: "_id",
-          as: "product",
-        },
-      },
-      { $unwind: "$product" },
-      {
-        $project: {
-          _id: 0,
-          productId: "$product._id",
-          name: "$product.name",
-          slug: "$product.slug",
-          revenue: 1,
-          quantity: 1,
-          averageRating: "$product.averageRating",
-          reviewCount: "$product.reviewCount",
-        },
-      },
-    ]),
-    ProductModel.find({ isPublished: true })
-      .sort({ averageRating: -1, reviewCount: -1 })
-      .limit(5)
-      .select("name slug averageRating reviewCount category")
-      .lean(),
-    UserModel.countDocuments({}),
-    ReviewModel.countDocuments({}),
-  ]);
-
-  // PERBAIKAN: Menambahkan tipe eksplisit pada parameter 'sum' and 'item'
-  const revenueTotal = (orderMetrics as OrderMetric[]).reduce((sum: number, item: OrderMetric) => sum + (item.revenue ?? 0), 0);
-
-  // PERBAIKAN: Menambahkan tipe eksplisit pada parameter 'acc' and 'item'
-  const orderStatus = (orderMetrics as OrderMetric[]).reduce<Record<string, number>>((acc: Record<string, number>, item: OrderMetric) => {
-    acc[item._id ?? "unknown"] = item.count;
-    return acc;
-  }, {});
-
-  // PERBAIKAN: Menambahkan tipe eksplisit pada parameter 'acc' and 'item'
-  const fulfillmentStatus = (statusMetrics as StatusMetric[]).reduce<Record<string, number>>((acc: Record<string, number>, item: StatusMetric) => {
-    acc[item._id ?? "unknown"] = item.count;
-    return acc;
-  }, {});
+  const fulfillmentStatus: Record<string, number> = listOrders().reduce(
+    (acc, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   return {
     summary: {
-      totalRevenue: revenueTotal,
-      orders: orderStatus,
-      activeUsers,
-      reviewCount,
+      totalRevenue: summary.revenue,
+      activeUsers: summary.activeUsers,
+      reviewCount: listReviews().length,
+      orders: {
+        paid: listOrders().filter((o) => o.paymentStatus === "paid").length,
+        pending: listOrders().filter((o) => o.paymentStatus === "pending")
+          .length,
+      },
       fulfillmentStatus,
     },
-    topProducts,
+    topProducts: topProducts.map((p) => ({
+      ...p,
+      quantity:
+        listOrders()
+          .flatMap((o) => o.items)
+          .filter((item) => item.productId === p.id)
+          .reduce((sum, item) => sum + item.quantity, 0) || 0,
+      revenue:
+        listOrders()
+          .flatMap((o) => o.items)
+          .filter((item) => item.productId === p.id)
+          .reduce((sum, item) => sum + item.price, 0) || 0,
+    })),
     ratingLeaders,
   };
 }

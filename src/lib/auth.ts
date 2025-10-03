@@ -1,5 +1,4 @@
 ﻿import { SignJWT, jwtVerify, type JWTPayload } from "jose";
-import bcrypt from "bcryptjs";
 
 const encoder = new TextEncoder();
 
@@ -11,12 +10,9 @@ function getSecret() {
   return encoder.encode(secret);
 }
 
-export async function hashPassword(password: string) {
-  return bcrypt.hash(password, 12);
-}
-
 export async function verifyPassword(password: string, hash: string) {
-  return bcrypt.compare(password, hash);
+  // Untuk mock data, kita samakan saja passwordnya
+  return password === hash;
 }
 
 export interface AuthTokenPayload extends JWTPayload {
@@ -25,7 +21,10 @@ export interface AuthTokenPayload extends JWTPayload {
   role: "user" | "admin";
 }
 
-export async function createAuthToken(payload: AuthTokenPayload, expiresIn: string | number = "7d") {
+export async function createAuthToken(
+  payload: AuthTokenPayload,
+  expiresIn: string | number = "7d"
+) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()

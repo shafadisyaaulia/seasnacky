@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getDashboardSnapshot } from "@/lib/services/dashboard";
+import { getDashboardSummary } from "../_data/mockData";
 
 export async function GET() {
-  const data = await getDashboardSnapshot();
+  const data = getDashboardSummary();
   return NextResponse.json(data);
 }

@@ -64,7 +64,7 @@ export type Review = {
 
 const createId = () => Math.random().toString(36).slice(2, 10);
 
-const users: User[] = [
+export const users: User[] = [
   {
     id: "usr-001",
     name: "Mira Sasmita",
@@ -99,7 +99,7 @@ const products: Product[] = [
     stock: 320,
     rating: 4.95,
     reviewsCount: 2410,
-    image: "/images/products/keripik-signature.png",
+    image: "/keripik-signature.png",
   },
   {
     id: "prd-abon-01",
@@ -114,7 +114,7 @@ const products: Product[] = [
     stock: 210,
     rating: 4.88,
     reviewsCount: 1860,
-    image: "/images/products/abon-tuna.png",
+    image: "/abon-tuna.png",
   },
   {
     id: "prd-bakso-01",
@@ -129,7 +129,7 @@ const products: Product[] = [
     stock: 180,
     rating: 4.91,
     reviewsCount: 980,
-    image: "/images/products/bakso-ikan.png",
+    image: "/bakso-ikan.png",
   },
   {
     id: "prd-nugget-01",
@@ -144,7 +144,7 @@ const products: Product[] = [
     stock: 260,
     rating: 4.84,
     reviewsCount: 1310,
-    image: "/images/products/nugget-ikan.png",
+    image: "/nugget-ikan.png",
   },
   {
     id: "prd-keripik-02",
@@ -159,7 +159,7 @@ const products: Product[] = [
     stock: 150,
     rating: 4.94,
     reviewsCount: 1850,
-    image: "/images/products/keripik-nori.png",
+    image: "/keripik-nori.png",
   },
 ];
 
@@ -523,4 +523,3 @@ export function getDashboardSummary() {
     highlights: topHighlight,
   };
 }
-

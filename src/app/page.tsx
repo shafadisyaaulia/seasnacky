@@ -1,22 +1,18 @@
 // src/app/page.tsx
-
 import Link from "next/link";
-import { connectToDatabase } from "@/lib/db";
+import ProductCatalog from "@/components/ProductCatalog";
 import {
-  Article,
-  ArticleModel,
-  Product,
-  ProductModel,
-  Review,
-  ReviewModel,
-  Tip,
-  TipModel,
-  User,
-} from "@/lib/models";
+  listArticles,
+  listProducts,
+  listReviews,
+  listTips,
+  users,
+  type User,
+  type Product,
+  type Review,
+} from "@/app/api/_data/mockData";
 import { getDashboardSnapshot } from "@/lib/services/dashboard";
 import { formatCurrency } from "@/lib/utils";
-import { Types } from "mongoose";
-import ProductCatalog from "@/components/ProductCatalog"; // <-- IMPORT KOMPONEN KATALOG
 
 function formatStatLabel(value: number, suffix: string = "+") {
   if (value >= 1000) {
@@ -40,66 +36,58 @@ function formatNumber(value: number) {
 }
 
 export default async function Home() {
-  await connectToDatabase();
-
   const [dashboard, products, articles, tips, reviews] = await Promise.all([
     getDashboardSnapshot(),
-    ProductModel.find({ isPublished: true })
-      .sort({ averageRating: -1, createdAt: -1 })
-      .limit(8)
-      .lean(),
-    ArticleModel.find({ isPublished: true })
-      .sort({ createdAt: -1 })
-      .limit(4)
-      .lean(),
-    TipModel.find({ isPublished: true })
-      .sort({ createdAt: -1 })
-      .limit(4)
-      .lean(),
-    ReviewModel.find({})
-      .sort({ createdAt: -1 })
-      .limit(2)
-      .populate<{user: User}>("user", "name")
-      .populate<{product: Product}>("product", "name")
-      .lean(),
+    Promise.resolve(listProducts().slice(0, 8)),
+    Promise.resolve(listArticles().slice(0, 4)),
+    Promise.resolve(listTips().slice(0, 4)),
+    Promise.resolve(listReviews().slice(0, 2)),
   ]);
 
   const heroStats = [
     {
       label: "Produk Olahan Laut",
-      value: formatStatLabel(await ProductModel.countDocuments({ isPublished: true })),
+      value: formatStatLabel(products.length),
     },
     {
       label: "Kategori Tersedia",
-      value: formatStatLabel(new Set(products.map((item: Product) => item.category)).size || 1, ""),
+      value: formatStatLabel(
+        new Set(products.map((item: Product) => item.category)).size || 1,
+        ""
+      ),
     },
     {
       label: "Rating Pelanggan",
-      value: `${(products[0]?.averageRating ?? 4.9).toFixed(2)}/5`,
+      value: `${(products[0]?.rating ?? 4.9).toFixed(2)}/5`,
     },
   ];
 
-  const featuredProducts = dashboard.topProducts.slice(0, 3).map((product: any) => ({
-    name: product.name,
-    rating: product.averageRating ?? 4.8,
-    orders: product.quantity ?? 0,
-    trend: `${Math.max(5, Math.min(25, Math.round((product.revenue ?? 1) / 1_000_000)))}% QoQ`,
-  }));
+  const featuredProducts = dashboard.topProducts
+    .slice(0, 3)
+    .map((product: any) => ({
+      name: product.name,
+      rating: product.rating ?? 4.8,
+      orders: product.quantity ?? 0,
+      trend: `${Math.max(
+        5,
+        Math.min(25, Math.round((product.revenue ?? 1) / 1_000_000))
+      )}% QoQ`,
+    }));
 
   const knowledgeBase = [
-    ...articles.map((article: Article) => ({
+    ...articles.map((article) => ({
       category: article.category,
       title: article.title,
       timeframe: article.readingTime || "5 menit baca",
       description: truncate(article.summary ?? "", 110),
-      url: `/articles/${article.slug}`,
+      url: `/articles/${article.id}`,
     })),
-    ...tips.map((tip: Tip) => ({
+    ...tips.map((tip) => ({
       category: "Tips Penyimpanan",
       title: tip.title,
       timeframe: tip.duration || "3 menit baca",
       description: truncate(tip.detail ?? "", 110),
-      url: `/tips/${tip.slug}`,
+      url: `/tips/${tip.id}`,
     })),
   ].slice(0, 4);
 
@@ -113,7 +101,11 @@ export default async function Home() {
     {
       title: "Produk Terlaris",
       stat: dashboard.topProducts[0]?.name ?? "SeaSnacky Mix",
-      description: `${formatNumber(dashboard.topProducts[0]?.quantity ?? 0)} unit terjual dengan rating ${(dashboard.topProducts[0]?.averageRating ?? 4.9).toFixed(2)}.`,
+      description: `${formatNumber(
+        dashboard.topProducts[0]?.quantity ?? 0
+      )} unit terjual dengan rating ${(
+        dashboard.topProducts[0]?.rating ?? 4.9
+      ).toFixed(2)}.`,
       indicator: [32, 40, 45, 52, 64, 70],
     },
     {
@@ -124,13 +116,13 @@ export default async function Home() {
     },
   ];
 
-  const testimonials = reviews.map((review) => ({
-    name:
-      typeof review.user === "object" && review.user?.name
-        ? review.user.name
-        : "Pelanggan SeaSnacky",
-    quote: truncate(review.comment ?? "", 180),
-  }));
+  const testimonials = reviews.map((review) => {
+    const user = users.find((u) => u.id === review.userId);
+    return {
+      name: user ? user.name : "Pelanggan SeaSnacky",
+      quote: truncate(review.comment ?? "", 180),
+    };
+  });
 
   const heroProduct = products[0];
 
@@ -190,10 +182,13 @@ export default async function Home() {
             </span>
             <div className="space-y-6">
               <h1 className="text-4xl font-semibold leading-tight text-slate-900 sm:text-5xl lg:text-6xl">
-                Solusi <span className="gradient-text">camilan laut</span> modern untuk bisnis dan gaya hidup sehat.
+                Solusi <span className="gradient-text">camilan laut</span>{" "}
+                modern untuk bisnis dan gaya hidup sehat.
               </h1>
               <p className="max-w-xl text-lg text-slate-600">
-                Jelajahi kurasi produk laut premium dengan metadata nutrisi lengkap, konten edukasi siap pakai, dan insight penjualan real-time.
+                Jelajahi kurasi produk laut premium dengan metadata nutrisi
+                lengkap, konten edukasi siap pakai, dan insight penjualan
+                real-time.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
@@ -212,7 +207,10 @@ export default async function Home() {
             </div>
             <dl className="grid gap-8 sm:grid-cols-3">
               {heroStats.map((item) => (
-                <div key={item.label} className="rounded-3xl border border-blue-100 bg-white/80 p-6 shadow-sm">
+                <div
+                  key={item.label}
+                  className="rounded-3xl border border-blue-100 bg-white/80 p-6 shadow-sm"
+                >
                   <dt className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-400">
                     {item.label}
                   </dt>
@@ -232,7 +230,11 @@ export default async function Home() {
                 {heroProduct?.name ?? "Seaweed Crunch Mix"}
               </p>
               <p className="mt-2 text-sm text-slate-600">
-                {truncate(heroProduct?.description ?? "Camilan laut kaya mineral dengan tekstur renyah.", 140)}
+                {truncate(
+                  heroProduct?.description ??
+                    "Camilan laut kaya mineral dengan tekstur renyah.",
+                  140
+                )}
               </p>
             </div>
             <div className="frosted rounded-[32px] border border-white/50 p-6">
@@ -240,18 +242,31 @@ export default async function Home() {
                 Snapshot Penjualan
               </p>
               <p className="mt-3 text-lg font-semibold text-slate-900">
-                {formatCurrency(dashboard.summary.totalRevenue)} revenue paid · {dashboard.summary.reviewCount} ulasan terverifikasi
+                {formatCurrency(dashboard.summary.totalRevenue)} revenue paid ·{" "}
+                {dashboard.summary.reviewCount} ulasan terverifikasi
               </p>
               <div className="mt-6 grid grid-cols-2 gap-4">
                 <div className="rounded-3xl bg-white/90 p-4 text-sm text-slate-600">
-                  <p className="font-semibold text-slate-900">Pesanan Diproses</p>
-                  <p className="mt-2 text-2xl font-semibold text-blue-600">{formatNumber(dashboard.summary.fulfillmentStatus?.diproses ?? 0)}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.22em] text-blue-300">Dalam antrian</p>
+                  <p className="font-semibold text-slate-900">
+                    Pesanan Diproses
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-blue-600">
+                    {formatNumber(
+                      dashboard.summary.fulfillmentStatus?.diproses ?? 0
+                    )}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.22em] text-blue-300">
+                    Dalam antrian
+                  </p>
                 </div>
                 <div className="rounded-3xl bg-white/90 p-4 text-sm text-slate-600">
                   <p className="font-semibold text-slate-900">Stok Aktif</p>
-                  <p className="mt-2 text-2xl font-semibold text-blue-600">{formatNumber(products.length)}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.22em] text-blue-300">Katalog unggulan</p>
+                  <p className="mt-2 text-2xl font-semibold text-blue-600">
+                    {formatNumber(products.length)}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-[0.22em] text-blue-300">
+                    Katalog unggulan
+                  </p>
                 </div>
               </div>
             </div>
@@ -260,27 +275,32 @@ export default async function Home() {
 
         <section id="shop" className="space-y-14">
           <div className="space-y-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">Marketplace</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">
+              Marketplace
+            </p>
             <h2 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
               Kurasi camilan laut dengan standar kualitas ekspor.
             </h2>
             <p className="max-w-3xl text-base text-slate-600">
-              Setiap produk melewati uji organoleptik, pencatatan batch, dan pengemasan dingin. Pilih untuk retail, horeca, maupun konsumen rumahan dengan insight margin terukur.
+              Setiap produk melewati uji organoleptik, pencatatan batch, dan
+              pengemasan dingin. Pilih untuk retail, horeca, maupun konsumen
+              rumahan dengan insight margin terukur.
             </p>
           </div>
 
-          {/* ▼▼▼ MULAI PERUBAHAN ▼▼▼ */}
           <div className="mx-auto max-w-2xl sm:px-6 lg:max-w-7xl lg:px-8">
-              <ProductCatalog />
+            <ProductCatalog />
           </div>
-          {/* ▲▲▲ SELESAI PERUBAHAN ▲▲▲ */}
 
           <div className="rounded-[40px] border border-blue-100 bg-blue-50/70 p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-3">
-                <h3 className="text-2xl font-semibold text-slate-900">Top Rated & Trending</h3>
+                <h3 className="text-2xl font-semibold text-slate-900">
+                  Top Rated & Trending
+                </h3>
                 <p className="max-w-xl text-sm text-slate-600">
-                  Insight otomatis memadukan rating, repeat order, dan margin kontribusi untuk rekomendasi stok harian.
+                  Insight otomatis memadukan rating, repeat order, dan margin
+                  kontribusi untuk rekomendasi stok harian.
                 </p>
               </div>
               <Link
@@ -291,174 +311,94 @@ export default async function Home() {
               </Link>
             </div>
             <div className="mt-8 grid auto-rows-fr gap-6 md:grid-cols-3">
-              {featuredProducts.map((product: { name: string; rating: number; orders: number; trend: string }) => (
-                <div key={product.name} className="flex h-full flex-col justify-between rounded-3xl bg-white p-6 shadow-sm">
-                  <p className="text-sm font-semibold text-slate-900">{product.name}</p>
-                  <dl className="mt-6 space-y-3 text-xs">
-                    <div className="flex items-center justify-between uppercase tracking-[0.22em] text-slate-500">
-                      <dt>Rating</dt>
-                      <dd className="font-semibold text-blue-600">{product.rating.toFixed(2)}</dd>
-                    </div>
-                    <div className="flex items-center justify-between uppercase tracking-[0.22em] text-slate-500">
-                      <dt>Order</dt>
-                      <dd className="font-semibold text-blue-600">{formatNumber(product.orders)}</dd>
-                    </div>
-                    <div className="flex items-center justify-between uppercase tracking-[0.22em] text-slate-500">
-                      <dt>Tren</dt>
-                      <dd className="font-semibold text-blue-600">{product.trend}</dd>
-                    </div>
-                  </dl>
-                </div>
-              ))}
+              {featuredProducts.map(
+                (product: {
+                  name: string;
+                  rating: number;
+                  orders: number;
+                  trend: string;
+                }) => (
+                  <div
+                    key={product.name}
+                    className="flex h-full flex-col justify-between rounded-3xl bg-white p-6 shadow-sm"
+                  >
+                    <p className="text-sm font-semibold text-slate-900">
+                      {product.name}
+                    </p>
+                    <dl className="mt-6 space-y-3 text-xs">
+                      <div className="flex items-center justify-between uppercase tracking-[0.22em] text-slate-500">
+                        <dt>Rating</dt>
+                        <dd className="font-semibold text-blue-600">
+                          {product.rating.toFixed(2)}
+                        </dd>
+                      </div>
+                      <div className="flex items-center justify-between uppercase tracking-[0.22em] text-slate-500">
+                        <dt>Order</dt>
+                        <dd className="font-semibold text-blue-600">
+                          {formatNumber(product.orders)}
+                        </dd>
+                      </div>
+                      <div className="flex items-center justify-between uppercase tracking-[0.22em] text-slate-500">
+                        <dt>Tren</dt>
+                        <dd className="font-semibold text-blue-600">
+                          {product.trend}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                )
+              )}
             </div>
           </div>
         </section>
 
         <section id="edu" className="space-y-14">
           <div className="space-y-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">Edukasi & Inspirasi</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">
+              Edukasi & Inspirasi
+            </p>
             <h2 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
               Resep sehat dan tips penyimpanan yang bisa diakses siapa pun.
             </h2>
             <p className="max-w-3xl text-base text-slate-600">
-              Konten edukasi dikurasi oleh nutrisionis dan chef untuk memastikan manfaat maksimal dari bahan-bahan laut.
+              Konten edukasi dikurasi oleh nutrisionis dan chef untuk
+              memastikan manfaat maksimal dari bahan-bahan laut.
             </p>
           </div>
           <div className="grid auto-rows-fr gap-8 lg:grid-cols-2">
-            {knowledgeBase.map((item: { title: string, category: string, timeframe: string, description: string, url: string }) => (
-              <article
-                key={item.title}
-                className="group flex h-full flex-col justify-between rounded-[32px] border border-blue-100 bg-white p-8 transition duration-500 hover:-translate-y-2 hover:border-blue-300"
-              >
-                <div className="space-y-4">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-400">
-                    {item.category} · {item.timeframe}
-                  </span>
-                  <h3 className="text-2xl font-semibold text-slate-900">{item.title}</h3>
-                  <p className="text-sm text-slate-600">{item.description}</p>
-                </div>
-                <Link
-                  href={item.url}
-                  className="mt-10 inline-flex items-center text-xs font-semibold uppercase tracking-[0.24em] text-blue-600 transition hover:text-blue-700"
+            {knowledgeBase.map(
+              (item: {
+                title: string;
+                category: string;
+                timeframe: string;
+                description: string;
+                url: string;
+              }) => (
+                <article
+                  key={item.title}
+                  className="group flex h-full flex-col justify-between rounded-[32px] border border-blue-100 bg-white p-8 transition duration-500 hover:-translate-y-2 hover:border-blue-300"
                 >
-                  Baca selengkapnya
-                </Link>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="dashboard" className="space-y-14">
-          <div className="space-y-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">Dashboard Insight</p>
-            <h2 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
-              Pantau performa bisnis secara visual, responsif, dan real-time.
-            </h2>
-            <p className="max-w-3xl text-base text-slate-600">
-              Dashboard admin menghadirkan metrik kunci seperti revenue, produk terlaris, rating pelanggan, dan pengguna aktif.
-            </p>
-          </div>
-          <div className="grid auto-rows-fr gap-8 lg:grid-cols-3">
-            {dashboardSignals.map((signal) => (
-              <div key={signal.title} className="rounded-[32px] border border-blue-100 bg-white p-6 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-400">
-                  {signal.title}
-                </p>
-                <p className="mt-4 text-2xl font-semibold text-slate-900">{signal.stat}</p>
-                <p className="mt-2 text-sm text-slate-600">{signal.description}</p>
-                <div className="mt-6 flex items-end justify-between gap-2">
-                  {signal.indicator.map((value, index) => (
-                    <div key={`${signal.title}-${index}`} className="flex-1 rounded-full bg-blue-100">
-                      <div
-                        className="rounded-full bg-blue-600"
-                        style={{ height: `${value}%`, width: "100%" }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section id="reviews" className="space-y-14">
-          <div className="space-y-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">Review & Rating</p>
-            <h2 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
-              Pengalaman pelanggan yang konsisten membangun loyalitas.
-            </h2>
-            <p className="max-w-3xl text-base text-slate-600">
-              Sistem ulasan terverifikasi memastikan feedback real-time untuk tim produk dan pemasaran.
-            </p>
-          </div>
-          <div className="grid auto-rows-fr gap-8 md:grid-cols-2">
-            {testimonials.map((item) => (
-              <figure key={item.name} className="rounded-[32px] border border-blue-100 bg-white p-8 shadow-sm">
-                <blockquote className="text-lg text-slate-700">“{item.quote}”</blockquote>
-                <figcaption className="mt-6 text-xs font-semibold uppercase tracking-[0.24em] text-blue-400">
-                  {item.name}
-                </figcaption>
-              </figure>
-            ))}
-            {testimonials.length === 0 ? (
-              <figure className="rounded-[32px] border border-blue-100 bg-white p-8 shadow-sm">
-                <blockquote className="text-lg text-slate-700">
-                  “Kami menjaga standar kualitas agar setiap camilan laut tiba fresh di pelanggan.”
-                </blockquote>
-                <figcaption className="mt-6 text-xs font-semibold uppercase tracking-[0.24em] text-blue-400">
-                  Tim SeaSnacky
-                </figcaption>
-              </figure>
-            ) : null}
-          </div>
-        </section>
-
-        <section id="cta" className="rounded-[40px] border border-blue-100 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 p-10 text-white shadow-[0_32px_60px_-50px_rgba(37,99,235,0.5)]">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">Siap Scale Up?</p>
-              <h3 className="text-3xl font-semibold lg:text-4xl">
-                Gabung sebagai mitra distribusi atau kelola toko Anda bersama SeaSnacky Marketplace.
-              </h3>
-              <p className="max-w-2xl text-sm text-white/85">
-                Registrasi cepat, onboarding produk kurasi harian, dan dukungan pemasaran digital siap membantu penetrasi pasar Anda di seluruh Indonesia.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 text-xs font-semibold uppercase tracking-[0.24em]">
-              <Link
-                href="/user/register"
-                className="rounded-full bg-white px-6 py-3 text-blue-700 shadow-lg transition hover:bg-blue-50"
-              >
-                Daftar Pengguna
-              </Link>
-              <Link
-                href="/admin/onboarding"
-                className="rounded-full border border-white px-6 py-3 text-center text-white transition hover:bg-white/10"
-              >
-                Onboarding Merchant
-              </Link>
-            </div>
+                  <div className="space-y-4">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-400">
+                      {item.category} · {item.timeframe}
+                    </span>
+                    <h3 className="text-2xl font-semibold text-slate-900">
+                      {item.title}
+                    </h3>
+                    <p className="text-sm text-slate-600">{item.description}</p>
+                  </div>
+                  <Link
+                    href={item.url}
+                    className="mt-10 inline-flex items-center text-xs font-semibold uppercase tracking-[0.24em] text-blue-600 transition hover:text-blue-700"
+                  >
+                    Baca selengkapnya
+                  </Link>
+                </article>
+              )
+            )}
           </div>
         </section>
       </main>
-
-      <footer className="mx-auto mt-24 flex w-full max-w-6xl flex-col gap-4 px-6 pb-16 text-xs text-slate-500">
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-blue-200 to-transparent" aria-hidden />
-        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
-          <p className="font-semibold text-slate-600">© {new Date().getFullYear()} SeaSnacky Marketplace.</p>
-          <div className="flex flex-wrap gap-6">
-            <Link href="/api/health" className="hover:text-blue-600">
-              Status API
-            </Link>
-            <Link href="/admin" className="hover:text-blue-600">
-              Portal Admin
-            </Link>
-            <Link href="/user" className="hover:text-blue-600">
-              Dashboard Pengguna
-            </Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import type { AuthTokenPayload } from "./auth";
 import { createAuthToken, verifyAuthToken } from "./auth";
+import { users } from "@/app/api/_data/mockData"; // Impor mock data
 
 const COOKIE_NAME = "seasnacky_session";
 const ONE_DAY = 60 * 60 * 24;
@@ -9,9 +10,12 @@ const ONE_DAY = 60 * 60 * 24;
 export async function createSessionResponse<T>(
   payload: AuthTokenPayload,
   body: T,
-  options?: { remember?: boolean; status?: number },
+  options?: { remember?: boolean; status?: number }
 ) {
-  const token = await createAuthToken(payload, options?.remember ? "30d" : "7d");
+  const token = await createAuthToken(
+    payload,
+    options?.remember ? "30d" : "7d"
+  );
   const response = NextResponse.json(body, { status: options?.status ?? 200 });
   response.cookies.set({
     name: COOKIE_NAME,
@@ -26,7 +30,10 @@ export async function createSessionResponse<T>(
 }
 
 export function clearSession() {
-  const response = NextResponse.json({ message: "Logout berhasil." }, { status: 200 });
+  const response = NextResponse.json(
+    { message: "Logout berhasil." },
+    { status: 200 }
+  );
   response.cookies.set({
     name: COOKIE_NAME,
     value: "",
@@ -36,35 +43,20 @@ export function clearSession() {
   return response;
 }
 
-// ❌ sebelumnya sinkron
-// export function getSessionCookie() {
-//   return cookies().get(COOKIE_NAME)?.value ?? null;
-// }
-
-// ✅ versi async
 export async function getSessionCookie() {
   const cookieStore = cookies();
   return (await cookieStore).get(COOKIE_NAME)?.value ?? null;
 }
 
-// ❌ sebelumnya memanggil getSessionCookie() sinkron
-// export async function getAuthUser() {
-//   const token = getSessionCookie();
-//   if (!token) return null;
-//   try {
-//     return await verifyAuthToken(token);
-//   } catch {
-//     return null;
-//   }
-// }
-
-// ✅ versi fix
 export async function getAuthUser() {
   const token = await getSessionCookie();
   if (!token) return null;
 
   try {
-    return await verifyAuthToken(token);
+    const verified = await verifyAuthToken(token);
+    // Verifikasi user dari mock data
+    const user = users.find((u) => u.id === verified.sub);
+    return user ? verified : null;
   } catch {
     return null;
   }
