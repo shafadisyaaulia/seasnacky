@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateUser } from "../../_data/mockData";
 import { loginSchema } from "@/lib/validators";
+import { createSessionResponse } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
   const payload = await request.json();
@@ -23,13 +24,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({
-    message: "Login berhasil.",
-    data: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      address: user.address,
-    },
-  });
+  // Membuat sesi dan mengirimkan cookie sebagai respons
+  return await createSessionResponse(
+    { sub: user.id, email: user.email, role: "user" },
+    {
+      message: "Login berhasil.",
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        address: user.address,
+      },
+    }
+  );
 }

@@ -1,78 +1,46 @@
 ﻿import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getAuthUser } from "@/lib/session";
+import { getUserById } from "@/app/api/_data/mockData";
 
-const profileHighlights = [
-  {
-    label: "Total Pesanan",
-    value: "42",
-    detail: "12 bulan terakhir",
-  },
-  {
-    label: "Voucher Aktif",
-    value: "4",
-    detail: "Siap digunakan",
-  },
-  {
-    label: "Poin Loyalti",
-    value: "1.820",
-    detail: "Kadaluarsa 31 Des",
-  },
-];
-
+// Data statis yang bisa Anda ubah nanti
 const orderTimeline = [
-  {
-    id: "INV-9821",
-    status: "Diproses",
-    product: "Bundle Bakso Ikan Horeca",
-    eta: "Estimasi tiba 1 Okt",
-  },
-  {
-    id: "INV-9774",
-    status: "Dikirim",
-    product: "Keripik Rumput Laut Signature",
-    eta: "Dalam pengiriman",
-  },
-  {
-    id: "INV-9710",
-    status: "Selesai",
-    product: "Abon Tuna Mediterranean",
-    eta: "Tiba 22 Sep",
-  },
+  { id: "INV-9821", status: "Diproses", product: "Bundle Bakso Ikan Horeca", eta: "Estimasi tiba 1 Okt" },
+  { id: "INV-9774", status: "Dikirim", product: "Keripik Rumput Laut Signature", eta: "Dalam pengiriman" },
+  { id: "INV-9710", status: "Selesai", product: "Abon Tuna Mediterranean", eta: "Tiba 22 Sep" },
 ];
-
 const suggestions = [
-  {
-    title: "Stok untuk Meal Prep Mingguan",
-    description: "Pilih paket high-protein favorit Anda untuk bekal keluarga.",
-    action: "Lihat Rekomendasi",
-    href: "/api/products/recommendation",
-  },
-  {
-    title: "Tambah Produk Frozen",
-    description: "Nikmati diskon 15% untuk pesanan kedua produk beku.",
-    action: "Klaim Voucher",
-    href: "/api/orders/voucher",
-  },
+  { title: "Stok untuk Meal Prep Mingguan", description: "Pilih paket high-protein favorit Anda untuk bekal keluarga.", action: "Lihat Rekomendasi", href: "/api/products/recommendation" },
+  { title: "Tambah Produk Frozen", description: "Nikmati diskon 15% untuk pesanan kedua produk beku.", action: "Klaim Voucher", href: "/api/orders/voucher" },
 ];
-
 const educationShortlist = [
-  {
-    title: "Meal Prep Healthy Bento",
-    category: "Resep",
-    duration: "7 menit baca",
-  },
-  {
-    title: "Panduan Simpan Frozen Food",
-    category: "Tips",
-    duration: "Video 3 menit",
-  },
-  {
-    title: "Kombinasi Snack Seimbang",
-    category: "Artikel",
-    duration: "5 menit baca",
-  },
+  { title: "Meal Prep Healthy Bento", category: "Resep", duration: "7 menit baca" },
+  { title: "Panduan Simpan Frozen Food", category: "Tips", duration: "Video 3 menit" },
+  { title: "Kombinasi Snack Seimbang", category: "Artikel", duration: "5 menit baca" },
 ];
 
-export default function UserDashboardPage() {
+export default async function UserDashboardPage() {
+  const authUser = await getAuthUser();
+
+  // Jika tidak ada sesi login, arahkan ke halaman login.
+  if (!authUser) {
+    redirect("/user/login");
+  }
+
+  // Jika ada sesi, cari detail pengguna di data
+  const user = getUserById(authUser.sub);
+
+  // Jika sesi ada tapi data user (karena restart server) tidak ditemukan, arahkan juga ke login
+  if (!user) {
+    redirect("/user/login");
+  }
+
+  const profileHighlights = [
+    { label: "Total Pesanan", value: user.orders.length.toString(), detail: "12 bulan terakhir" },
+    { label: "Voucher Aktif", value: "4", detail: "Siap digunakan" },
+    { label: "Poin Loyalti", value: user.loyaltyPoints.toLocaleString("id-ID"), detail: "Kadaluarsa 31 Des" },
+  ];
+
   return (
     <div className="min-h-screen bg-white pb-20">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-14 px-6 pt-12">
@@ -81,13 +49,13 @@ export default function UserDashboardPage() {
             Dashboard Pengguna
           </p>
           <h1 className="text-4xl font-semibold text-slate-900 sm:text-5xl">
-            Selamat datang kembali, Mira.
+            Selamat datang kembali, {user.name.split(" ")[0]}.
           </h1>
           <p className="max-w-2xl text-sm text-slate-600">
             Kelola profil, pantau pesanan aktif, dan temukan inspirasi sehat yang dipersonalisasi khusus untuk Anda.
           </p>
         </header>
-
+        {/* ... sisa kode JSX sama seperti sebelumnya ... */}
         <section className="grid gap-4 sm:grid-cols-3">
           {profileHighlights.map((item) => (
             <article
@@ -102,7 +70,6 @@ export default function UserDashboardPage() {
             </article>
           ))}
         </section>
-
         <section className="rounded-[32px] border border-rose-100 bg-white p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -135,7 +102,6 @@ export default function UserDashboardPage() {
             ))}
           </div>
         </section>
-
         <section className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
           <div className="rounded-[32px] border border-rose-100 bg-white p-8">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -191,7 +157,6 @@ export default function UserDashboardPage() {
             </div>
           </div>
         </section>
-
         <section className="rounded-[32px] border border-rose-100 bg-gradient-to-r from-rose-500 via-rose-400 to-rose-600 p-8 text-white">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">

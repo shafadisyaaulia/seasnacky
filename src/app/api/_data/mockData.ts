@@ -401,7 +401,11 @@ export function listReviews(productId?: string) {
 }
 
 export function authenticateUser(email: string, password: string) {
-  return users.find((user) => user.email === email && user.password === password);
+  const user = users.find((user) => user.email === email);
+  if (user && user.password === password) {
+    return user;
+  }
+  return undefined;
 }
 
 export function registerUser(payload: { name: string; email: string; password: string; address: string }) {
@@ -413,7 +417,7 @@ export function registerUser(payload: { name: string; email: string; password: s
     id: `usr-${createId()}`,
     name: payload.name,
     email: payload.email,
-    password: payload.password,
+    password: payload.password, // Password disimpan langsung (tanpa hash untuk mock data)
     address: payload.address,
     loyaltyPoints: 0,
     orders: [],

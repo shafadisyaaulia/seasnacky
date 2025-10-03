@@ -160,7 +160,7 @@ export default async function Home() {
         </nav>
         <div className="flex items-center gap-3 text-sm font-semibold">
           <Link
-            href="/user"
+            href="/user/login" // <--- MENJADI SEPERTI INI
             className="rounded-full border border-blue-200 px-4 py-2 text-blue-600 transition hover:border-blue-500 hover:text-blue-700"
           >
             Masuk Pengguna
