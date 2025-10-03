@@ -6,9 +6,14 @@ export function middleware(request: NextRequest) {
   // Dapatkan cookie "kartu akses demo"
   const hasDemoSession = request.cookies.has("demo_session");
 
-  // Jika mencoba akses halaman admin (selain halaman login) TAPI tidak punya kartu akses,
+  // Jika mencoba akses halaman admin (selain halaman login DAN register) TAPI tidak punya kartu akses,
   // arahkan ke halaman login.
-  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login") && !hasDemoSession) {
+  if (
+    pathname.startsWith("/admin") &&
+    !pathname.startsWith("/admin/login") &&
+    !pathname.startsWith("/admin/register") && // <-- TAMBAHKAN KONDISI INI
+    !hasDemoSession
+  ) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
@@ -24,5 +29,5 @@ export function middleware(request: NextRequest) {
 
 // Terapkan middleware ini untuk semua path di bawah /admin
 export const config = {
-  matcher: ["/admin/:path*", "/admin/login"],
+  matcher: ["/admin/:path*", "/admin/login", "/admin/register"], // Pastikan register juga masuk matcher
 };
