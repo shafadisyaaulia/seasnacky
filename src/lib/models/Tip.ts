@@ -11,7 +11,7 @@ const TipSchema = new Schema(
   { timestamps: true },
 );
 
-TipSchema.index({ slug: 1 }, { unique: true });
+// TipSchema.index({ slug: 1 }, { unique: true });
 TipSchema.index({ title: "text", detail: "text" });
 
 export type Tip = InferSchemaType<typeof TipSchema>;

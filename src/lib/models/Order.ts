@@ -39,7 +39,7 @@ const OrderSchema = new Schema(
   { timestamps: true },
 );
 
-OrderSchema.index({ code: 1 }, { unique: true });
+// OrderSchema.index({ code: 1 }, { unique: true });
 OrderSchema.index({ user: 1, createdAt: -1 });
 OrderSchema.index({ status: 1 });
 

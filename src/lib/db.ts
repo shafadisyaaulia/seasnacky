@@ -1,4 +1,13 @@
-﻿import mongoose from "mongoose";
+﻿// src/lib/db.ts
+
+import mongoose from "mongoose";
+
+// Cek variabel lingkungan di awal
+if (!process.env.MONGODB_URI) {
+  throw new Error("Silakan tambahkan MONGODB_URI ke file .env.local Anda");
+}
+
+const MONGODB_URI = process.env.MONGODB_URI;
 
 const globalConnection = globalThis as typeof globalThis & {
   _mongoose?: {
@@ -8,10 +17,6 @@ const globalConnection = globalThis as typeof globalThis & {
 };
 
 export async function connectToDatabase() {
-  if (!process.env.MONGODB_URI) {
-    throw new Error("Missing MONGODB_URI environment variable.");
-  }
-
   if (!globalConnection._mongoose) {
     globalConnection._mongoose = { conn: null, promise: null };
   }
@@ -24,12 +29,20 @@ export async function connectToDatabase() {
 
   if (!cached.promise) {
     mongoose.set("strictQuery", true);
-
-    cached.promise = mongoose.connect(process.env.MONGODB_URI, {
+    cached.promise = mongoose.connect(MONGODB_URI, {
       autoIndex: true,
+    }).then(mongoose => {
+      console.log("MongoDB terhubung!");
+      return mongoose;
     });
   }
 
-  cached.conn = await cached.promise;
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+  
   return cached.conn;
 }

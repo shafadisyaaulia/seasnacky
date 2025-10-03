@@ -15,7 +15,7 @@ const ArticleSchema = new Schema(
   { timestamps: true },
 );
 
-ArticleSchema.index({ slug: 1 }, { unique: true });
+// ArticleSchema.index({ slug: 1 }, { unique: true });
 ArticleSchema.index({ title: "text", summary: "text", tags: "text" });
 
 export type Article = InferSchemaType<typeof ArticleSchema>;

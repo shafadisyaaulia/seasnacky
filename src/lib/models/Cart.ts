@@ -18,7 +18,7 @@ const CartSchema = new Schema(
   { timestamps: true },
 );
 
-CartSchema.index({ user: 1 }, { unique: true });
+// CartSchema.index({ user: 1 }, { unique: true });
 
 export type CartItem = InferSchemaType<typeof CartItemSchema>;
 export type Cart = InferSchemaType<typeof CartSchema>;

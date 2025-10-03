@@ -1,3 +1,5 @@
+// src/app/page.tsx
+
 import Link from "next/link";
 import { connectToDatabase } from "@/lib/db";
 import {
@@ -14,6 +16,7 @@ import {
 import { getDashboardSnapshot } from "@/lib/services/dashboard";
 import { formatCurrency } from "@/lib/utils";
 import { Types } from "mongoose";
+import ProductCatalog from "@/components/ProductCatalog"; // <-- IMPORT KOMPONEN KATALOG
 
 function formatStatLabel(value: number, suffix: string = "+") {
   if (value >= 1000) {
@@ -29,7 +32,6 @@ function truncate(text: string, length: number) {
 
 export const revalidate = 60;
 
-// PERBAIKAN: Menambahkan pemeriksaan untuk nilai negatif untuk mencegah RangeError
 function formatNumber(value: number) {
   if (value < 0) {
     return "0";
@@ -76,13 +78,6 @@ export default async function Home() {
       value: `${(products[0]?.averageRating ?? 4.9).toFixed(2)}/5`,
     },
   ];
-
-  const productCollections = products.slice(0, 4).map((product: Product) => ({
-    name: product.name,
-    highlight: truncate(product.description ?? "", 90),
-    badge: product.tags?.[0] ?? "Best Seller",
-    priceRange: `Mulai ${formatCurrency(product.price)}`,
-  }));
 
   const featuredProducts = dashboard.topProducts.slice(0, 3).map((product: any) => ({
     name: product.name,
@@ -273,26 +268,12 @@ export default async function Home() {
               Setiap produk melewati uji organoleptik, pencatatan batch, dan pengemasan dingin. Pilih untuk retail, horeca, maupun konsumen rumahan dengan insight margin terukur.
             </p>
           </div>
-          <div className="grid auto-rows-fr gap-8 md:grid-cols-2 xl:grid-cols-4">
-            {productCollections.map((collection: { name: string; badge: string; highlight: string; priceRange: string }) => (
-              <article
-                key={collection.name}
-                className="group relative flex h-full flex-col justify-between overflow-hidden rounded-[32px] border border-blue-100 bg-white p-8 shadow-[0_32px_60px_-48px_rgba(37,99,235,0.4)] transition duration-500 hover:-translate-y-2 hover:border-blue-300"
-              >
-                <div className="absolute inset-0 -z-10 opacity-0 transition group-hover:opacity-100" aria-hidden>
-                  <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-white" />
-                </div>
-                <span className="rounded-full bg-blue-600 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white">
-                  {collection.badge}
-                </span>
-                <h3 className="mt-6 text-2xl font-semibold text-slate-900">{collection.name}</h3>
-                <p className="mt-3 text-sm text-slate-600">{collection.highlight}</p>
-                <p className="mt-10 text-xs font-semibold uppercase tracking-[0.24em] text-blue-400">
-                  {collection.priceRange}
-                </p>
-              </article>
-            ))}
+
+          {/* ▼▼▼ MULAI PERUBAHAN ▼▼▼ */}
+          <div className="mx-auto max-w-2xl sm:px-6 lg:max-w-7xl lg:px-8">
+              <ProductCatalog />
           </div>
+          {/* ▲▲▲ SELESAI PERUBAHAN ▲▲▲ */}
 
           <div className="rounded-[40px] border border-blue-100 bg-blue-50/70 p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">

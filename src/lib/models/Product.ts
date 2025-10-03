@@ -21,7 +21,7 @@ const ProductSchema = new Schema(
 );
 
 ProductSchema.index({ name: "text", category: "text", tags: "text", description: "text" });
-ProductSchema.index({ slug: 1 }, { unique: true });
+// ProductSchema.index({ slug: 1 }, { unique: true });
 
 export type Product = InferSchemaType<typeof ProductSchema>;
 export type ProductModel = Model<Product>;
