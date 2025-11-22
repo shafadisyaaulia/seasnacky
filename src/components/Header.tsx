@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { CartContext } from "@/context/CartContext";
 
 type User = { id: string; name?: string; email?: string; storeId?: string } | null;
 
 export default function Header() {
   const [user, setUser] = useState<User>(null);
   const [open, setOpen] = useState(false);
+  const cart = useContext(CartContext as any);
+  const cartCount = (cart?.items ?? []).reduce((s: number, it: any) => s + (it.quantity || 0), 0);
 
   useEffect(() => {
     let mounted = true;
@@ -51,6 +54,14 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link href="/checkout" className="relative hidden md:inline-flex items-center p-2 rounded-full text-sky-700 hover:bg-sky-50">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 7h14l-2-7" />
+            </svg>
+            {cartCount > 0 ? (
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1">{cartCount}</span>
+            ) : null}
+          </Link>
           {!user ? (
             <>
               <Link href="/user/login" className="hidden md:inline-flex items-center rounded-full bg-sky-700 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-sky-800">Daftar/Masuk</Link>
