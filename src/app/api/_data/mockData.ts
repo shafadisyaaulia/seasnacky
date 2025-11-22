@@ -6,6 +6,7 @@ export type User = {
   address: string;
   loyaltyPoints: number;
   orders: string[];
+  storeId?: string;
 };
 
 export type Product = {
@@ -535,4 +536,30 @@ export function getDashboardSummary() {
     productShare: salesByCategory,
     highlights: topHighlight,
   };
+}
+
+// Simple store mock mapping - return a store object for a product
+export type Store = {
+  id: string;
+  name: string;
+  city: string;
+};
+
+export const stores: Store[] = [
+  { id: "st-1", name: "Glenn Limbah", city: "LHOKSEUMAWE" },
+  { id: "st-2", name: "Sapa Mart", city: "ACEH TIMUR" },
+  { id: "st-3", name: "Barokah Tani", city: "DUMAI, RIAU" },
+  { id: "st-4", name: "SeaFresh", city: "BANDUNG" },
+];
+
+export function getStoreByProductId(productId: string) {
+  // Simple deterministic mapping based on hash
+  const idx = Math.abs(
+    productId.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+  ) % stores.length;
+  return stores[idx];
+}
+
+export function getStoreById(id: string) {
+  return stores.find((s) => s.id === id);
 }

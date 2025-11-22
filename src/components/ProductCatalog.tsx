@@ -23,6 +23,8 @@ function formatCurrency(value: number, currency: string = "IDR") {
   }).format(value);
 }
 
+import Image from "next/image";
+
 export default function ProductCatalog() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,11 +75,13 @@ export default function ProductCatalog() {
     <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
       {products.map((product) => (
         <div key={product.id} className="group relative">
-          <div className="aspect-h-1 aspect-w-1 lg:aspect-none w-full overflow-hidden rounded-md bg-gray-200 group-hover:opacity-75 lg:h-80">
-            <img
-              src={product.image || "https://via.placeholder.com/300"} // DIUBAH DARI imageUrl ke image
+          <div className="aspect-h-1 aspect-w-1 lg:aspect-none w-full overflow-hidden rounded-md bg-gray-200 group-hover:opacity-75 lg:h-80 relative img-zoom">
+            <Image
+              src={product.image || "https://via.placeholder.com/300"}
               alt={product.name}
-              className="h-full w-full object-cover object-center lg:h-full lg:w-full"
+              fill
+              sizes="(max-width: 640px) 100vw, 25vw"
+              className="object-cover object-center"
             />
           </div>
           <div className="mt-4 flex justify-between">

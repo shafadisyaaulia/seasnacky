@@ -1,3 +1,46 @@
+# SeaSnacky — Marketplace (Next.js)
+
+Project ready for local development and Vercel deployment.
+
+Quick start (local):
+
+1. Install dependencies
+```powershell
+Set-Location -Path "C:\INFORMATIKA\SEMESTER 5\POPL\FIX-PROJEKUAS\seasnacky"
+npm install
+```
+
+2. Run dev server (port 3000):
+```powershell
+npm run dev
+# open http://localhost:3000/marketplace
+```
+
+Build for production (locally):
+```powershell
+npm run build
+npm run start
+```
+
+API (mock) routes available under `/src/app/api/*` (used by frontend):
+- `GET /api/products` — list products
+- `GET /api/products/[id]` — product detail
+- `POST /api/cart` — append cart item (mock)
+- `GET /api/stores?productId=...` — store/seller info for a product
+
+Deployment to Vercel
+- Push this repository to GitHub.
+- Import project in Vercel (https://vercel.com/new) and select this repo.
+- Vercel will auto-detect Next.js and run `npm run build`.
+
+Production notes
+- Currently backend is mocked in `src/app/api/_data/mockData.ts`. Replace these mocks with real database calls (Prisma, Supabase, or external API) before production.
+- Consider using HTTP-only cookies or a proper auth solution for production (NextAuth, JWT with refresh tokens).
+- Review ESLint warnings and replace `<img>` with `next/image` for optimal image performance.
+
+If you want, I can:
+- Replace mock endpoints with a simple Express or Prisma backed API and show steps to configure a production DB.
+- Add `tailwind.config.js` to centralize theme colors.
 ## SeaSnacky
 
 Anggota Kelompok:

@@ -145,9 +145,9 @@ export default async function Home() {
           </div>
         </div>
         <nav className="hidden items-center gap-8 text-sm font-medium text-slate-700 md:flex">
-          <a href="#shop" className="transition-colors hover:text-blue-600">
+          <Link href="/marketplace" className="transition-colors hover:text-blue-600">
             Marketplace
-          </a>
+          </Link>
           <a href="#edu" className="transition-colors hover:text-blue-600">
             Edukasi
           </a>
@@ -193,7 +193,7 @@ export default async function Home() {
             </div>
             <div className="flex flex-wrap items-center gap-4">
               <Link
-                href="#shop"
+                href="/marketplace"
                 className="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white shadow-lg transition hover:bg-blue-700"
               >
                 Belanja Sekarang

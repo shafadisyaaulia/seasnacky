@@ -10,6 +10,14 @@ export async function POST(request: NextRequest) {
   const parsed = registerSchema.safeParse(payload);
 
   if (!parsed.success) {
+    // In development return detailed validation info to help debugging
+    if (process.env.NODE_ENV !== "production") {
+      return NextResponse.json(
+        { message: "Data registrasi tidak valid.", errors: parsed.error.flatten() },
+        { status: 422 }
+      );
+    }
+
     return NextResponse.json(
       { message: "Data registrasi tidak valid." },
       { status: 422 }
