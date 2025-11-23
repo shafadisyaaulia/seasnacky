@@ -127,52 +127,8 @@ export default async function Home() {
   const heroProduct = products[0];
 
   return (
-    <div className="relative isolate overflow-hidden bg-white">
+    <div className="relative isolate overflow-hidden bg-white pt-28">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[620px] bg-gradient-to-br from-sky-100 via-white to-white" />
-
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 pb-6 pt-10">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-lg font-bold tracking-tight text-white shadow-lg">
-            SS
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">
-              SeaSnacky
-            </p>
-            <p className="text-xl font-semibold text-slate-900">
-              Marketplace & Intelligence Hub
-            </p>
-          </div>
-        </div>
-        <nav className="hidden items-center gap-8 text-sm font-medium text-slate-700 md:flex">
-          <Link href="/marketplace" className="transition-colors hover:text-blue-600">
-            Marketplace
-          </Link>
-          <a href="#edu" className="transition-colors hover:text-blue-600">
-            Edukasi
-          </a>
-          <a href="#dashboard" className="transition-colors hover:text-blue-600">
-            Dashboard
-          </a>
-          <a href="#reviews" className="transition-colors hover:text-blue-600">
-            Review
-          </a>
-        </nav>
-        <div className="flex items-center gap-3 text-sm font-semibold">
-          <Link
-            href="/user/login" // <--- MENJADI SEPERTI INI
-            className="rounded-full border border-blue-200 px-4 py-2 text-blue-600 transition hover:border-blue-500 hover:text-blue-700"
-          >
-            Masuk Pengguna
-          </Link>
-          <Link
-            href="/admin"
-            className="rounded-full bg-blue-600 px-4 py-2 text-white shadow-lg transition hover:bg-blue-700"
-          >
-            Portal Admin
-          </Link>
-        </div>
-      </header>
 
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-28 px-6 pb-24">
         <section className="grid gap-16 lg:grid-cols-[1.2fr_1fr] lg:items-center">
