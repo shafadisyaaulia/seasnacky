@@ -1,16 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Store, Loader2 } from "lucide-react"; // Pastikan lucide-react terinstall
 
 export default function OpenShopPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState(""); // State untuk simpan ID User
+  const [isCheckingUser, setIsCheckingUser] = useState(true);
+
+  // State Form
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     address: "",
   });
+
+  // 1. OTOMATIS AMBIL ID USER SAAT HALAMAN DIBUKA
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        
+        // Cek apakah user ada ID-nya
+        if (data?.user?.id) {
+          // Jika user ternyata SUDAH punya toko, lempar ke dashboard
+          if (data.user.hasShop) {
+             router.push("/dashboard/seller");
+          }
+          setUserId(data.user.id);
+        } else {
+          // Kalau tidak login, tendang ke halaman login
+          alert("Silakan login terlebih dahulu.");
+          router.push("/login");
+        }
+      } catch (err) {
+        console.error("Gagal ambil user ID");
+      } finally {
+        setIsCheckingUser(false);
+      }
+    };
+    fetchUser();
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,17 +51,17 @@ export default function OpenShopPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Safety check
+    if (!userId) return alert("Data user belum dimuat. Tunggu sebentar.");
+
     setIsLoading(true);
 
     try {
-      // PENTING: Nanti ini diganti ID User asli dari session
-      // Untuk tes, buka MongoDB Atlas -> User -> Copy _id salah satu user -> Paste disini
-      // Contoh format ID: "65b2f..."
-      const dummyUserId = "MASUKKAN_ID_MONGO_DB_DISINI_KALAU_MAU_TES_SUBMIT"; 
-      
+      // Kita pakai ID User yang didapat otomatis tadi
       const payload = { 
         ...formData, 
-        userId: dummyUserId 
+        userId: userId 
       };
 
       const res = await fetch("/api/shop/create", {
@@ -39,10 +72,13 @@ export default function OpenShopPage() {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || "Gagal membuat toko");
 
-      alert("🎉 Selamat! Toko berhasil dibuat.");
-      router.push("/dashboard/seller"); 
+      // Sukses!
+      alert("🎉 Selamat! Toko berhasil dibuat. Mengalihkan ke Dashboard...");
+      
+      // Refresh window biar navbar terupdate (tombol berubah jadi Dashboard Toko)
+      window.location.href = "/dashboard/seller"; 
 
     } catch (error: any) {
       alert("Gagal: " + error.message);
@@ -51,20 +87,34 @@ export default function OpenShopPage() {
     }
   };
 
+  if (isCheckingUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex items-center gap-2 text-blue-600 font-semibold">
+          <Loader2 className="animate-spin" /> Memuat data akun...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      {/* Container Form */}
       <div className="max-w-lg w-full bg-white p-8 shadow-xl rounded-2xl border border-gray-100">
         
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-900">Buka Toko Seasnacky</h1>
-          <p className="text-gray-500 mt-2">Mulai jualan olahan lautmu sekarang!</p>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-full mb-4">
+            <Store size={32} />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Buka Toko Seasnacky</h1>
+          <p className="text-gray-500 mt-2 text-sm">
+            Isi formulir singkat di bawah ini untuk mulai berjualan produk olahan laut.
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Input Nama Toko */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Toko</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nama Toko <span className="text-red-500">*</span></label>
             <input
               name="name"
               required
@@ -79,7 +129,7 @@ export default function OpenShopPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi Singkat</label>
             <textarea
               name="description"
-              placeholder="Jual apa aja nih?"
+              placeholder="Jual apa aja nih? (Opsional)"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               rows={3}
               onChange={handleChange}
@@ -88,11 +138,11 @@ export default function OpenShopPage() {
 
           {/* Input Alamat */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap <span className="text-red-500">*</span></label>
             <textarea
               name="address"
               required
-              placeholder="Jalan Ikan Hiu No. 12..."
+              placeholder="Jalan Ikan Hiu No. 12, Kecamatan..."
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               rows={2}
               onChange={handleChange}
@@ -102,10 +152,16 @@ export default function OpenShopPage() {
           {/* Tombol Submit */}
           <button 
             type="submit" 
-            disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading || !userId}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isLoading ? "Sedang Memproses..." : "Buka Toko Gratis 🚀"}
+            {isLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={20} /> Memproses...
+              </>
+            ) : (
+              "Buka Toko Gratis 🚀"
+            )}
           </button>
         </form>
 

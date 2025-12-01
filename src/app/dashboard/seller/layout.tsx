@@ -6,8 +6,12 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       {/* Sidebar (Fixed di kiri) */}
       <SellerSidebar />
 
-      {/* Konten Utama (Di sebelah kanan) */}
-      <main className="flex-1 ml-64 p-8">
+      {/* PERBAIKAN UTAMA ADA DI SINI:
+         'ml-64' = Memberi margin kiri sebesar lebar sidebar (agar tidak ketimpa)
+         'w-full' = Memastikan konten mengambil sisa lebar layar
+         'pt-2' = Memberi sedikit jarak atas (opsional)
+      */}
+      <main className="flex-1 ml-64 p-8 w-full transition-all duration-300">
         {children}
       </main>
     </div>
