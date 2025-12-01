@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/session";
-import { PrismaClient } from "@prisma/client";
+import { getDb } from "@/lib/mongodb";
 
-const prisma = new PrismaClient();
-
-export async function POST(request: NextRequest) {
   try {
     const session = await getAuthUser();
     if (!session?.sub) {
@@ -13,28 +10,29 @@ export async function POST(request: NextRequest) {
     const userId = session.sub;
     const { name, city, address, description } = await request.json();
 
+    const db = await getDb();
+    if (!db) throw new Error("MongoDB not available");
+
     // Cek apakah user sudah punya toko
-    const existingStore = await prisma.store.findUnique({ where: { userId } });
+    const existingStore = await db.collection("stores").findOne({ userId });
     if (existingStore) {
       return NextResponse.json({ message: "Anda sudah memiliki toko." }, { status: 400 });
     }
 
     // Update role user menjadi SELLER
-    await prisma.user.update({
-      where: { id: userId },
-      data: { role: "SELLER" },
-    });
+    await db.collection("users").updateOne({ _id: userId }, { $set: { role: "SELLER" } });
 
     // Buat data toko baru dan relasikan ke user
-    const store = await prisma.store.create({
-      data: {
-        name,
-        city,
-        address,
-        description,
-        user: { connect: { id: userId } },
-      },
-    });
+    const storeData = {
+      name,
+      city,
+      address,
+      description,
+      userId,
+      createdAt: new Date(),
+    };
+    const result = await db.collection("stores").insertOne(storeData);
+    const store = await db.collection("stores").findOne({ _id: result.insertedId });
 
     return NextResponse.json({ message: "Toko berhasil dibuat.", data: store }, { status: 201 });
   } catch (err) {

@@ -1,28 +1,52 @@
-import { MongoClient } from 'mongodb';
+import mongoose from "mongoose";
+
+// Mengambil URL dari env
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
+  throw new Error("Please define the DATABASE_URL environment variable inside .env");
+}
+
+// Interface untuk caching koneksi agar tidak re-connect terus menerus
+interface MongooseCache {
+  conn: mongoose.Connection | null;
+  promise: Promise<mongoose.Connection> | null;
+}
 
 declare global {
-  // eslint-disable-next-line no-var
-  var __mongoClient__: MongoClient | undefined;
+  var mongoose: MongooseCache;
 }
 
-const uri = process.env.MONGODB_URI;
-if (!uri) {
-  // no-op when not configured
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
 }
 
-export function getMongoClient(): MongoClient | null {
-  if (!uri) return null;
-  if (global.__mongoClient__) return global.__mongoClient__ as MongoClient;
-  const client = new MongoClient(uri);
-  global.__mongoClient__ = client;
-  return client;
-}
-
-export async function getDb(dbName = undefined) {
-  const client = getMongoClient();
-  if (!client) return null;
-  if (!client.isConnected && typeof (client as any).connect === 'function') {
-    await client.connect();
+async function connectDB() {
+  if (cached.conn) {
+    return cached.conn;
   }
-  return client.db(dbName ?? undefined);
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
+
+    cached.promise = mongoose.connect(DATABASE_URL!, opts).then((mongoose) => {
+      console.log("✅ Berhasil connect ke MongoDB via Mongoose");
+      return mongoose.connection;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
 }
+
+export default connectDB;

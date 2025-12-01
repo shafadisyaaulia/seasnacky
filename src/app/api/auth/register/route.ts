@@ -1,51 +1,56 @@
-// src/app/api/auth/register/route.ts
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import bcrypt from "bcryptjs";
+import connectDB from "@/lib/mongodb";
+import User from "@/models/User";
 
-import { NextRequest, NextResponse } from "next/server";
-import { registerUser } from "../../_data/mockData";
-import { registerSchema } from "@/lib/validators";
-import { createSessionResponse } from "@/lib/session"; // <-- 1. Impor fungsi ini
+// Validasi Input
+const RegisterSchema = z.object({
+  name: z.string().min(3, "Nama minimal 3 karakter"),
+  email: z.string().email("Format email salah"),
+  password: z.string().min(6, "Password minimal 6 karakter"),
+});
 
-export async function POST(request: NextRequest) {
-  const payload = await request.json();
-  const parsed = registerSchema.safeParse(payload);
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    
+    // 1. Validasi Zod
+    const parsed = RegisterSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
+    }
+    
+    const { name, email, password } = parsed.data;
 
-  if (!parsed.success) {
-    // In development return detailed validation info to help debugging
-    if (process.env.NODE_ENV !== "production") {
-      return NextResponse.json(
-        { message: "Data registrasi tidak valid.", errors: parsed.error.flatten() },
-        { status: 422 }
-      );
+    // 2. Konek Database
+    await connectDB();
+
+    // 3. Cek Email Sudah Ada?
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return NextResponse.json({ error: "Email sudah terdaftar!" }, { status: 400 });
     }
 
-    return NextResponse.json(
-      { message: "Data registrasi tidak valid." },
-      { status: 422 }
-    );
+    // 4. Hash Password (Enkripsi)
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 5. Simpan User Baru
+    const newUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: "buyer", // Default role
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: "Registrasi berhasil! Silakan login.",
+      user: { id: newUser._id, name: newUser.name, email: newUser.email }
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.error("Register Error:", error);
+    return NextResponse.json({ error: "Terjadi kesalahan server" }, { status: 500 });
   }
-
-  const newUser = registerUser(parsed.data);
-
-  if (!newUser) {
-    return NextResponse.json(
-      { message: "Email sudah terdaftar." },
-      { status: 409 }
-    );
-  }
-
-  // 2. Ganti blok return yang lama dengan ini
-  // Langsung buat sesi untuk pengguna baru
-  return await createSessionResponse(
-    { sub: newUser.id, email: newUser.email, role: "user" },
-    {
-      message: "Registrasi berhasil.",
-      data: {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        address: newUser.address,
-      },
-    },
-    { status: 201 }
-  );
 }

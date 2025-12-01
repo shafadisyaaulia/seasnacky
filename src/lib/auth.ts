@@ -1,4 +1,5 @@
 ﻿import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import bcrypt from "bcryptjs"; // Pakai ini buat cek password asli
 
 const encoder = new TextEncoder();
 
@@ -10,15 +11,17 @@ function getSecret() {
   return encoder.encode(secret);
 }
 
+// UPDATE: Cek password menggunakan bcrypt (bukan string biasa)
 export async function verifyPassword(password: string, hash: string) {
-  // Untuk mock data, kita samakan saja passwordnya
-  return password === hash;
+  return await bcrypt.compare(password, hash);
 }
 
+// UPDATE: Tambahkan 'hasShop' di payload token biar frontend tau status toko
 export interface AuthTokenPayload extends JWTPayload {
   sub: string;
   email: string;
-  role: "user" | "admin";
+  role: "buyer" | "seller" | "admin"; // Sesuaikan dengan enum di User Model
+  hasShop?: boolean;
 }
 
 export async function createAuthToken(

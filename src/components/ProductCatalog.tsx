@@ -1,104 +1,112 @@
-// src/components/ProductCatalog.tsx
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ShoppingCart } from "lucide-react"; // Pastikan lucide-react terinstall
 
-// Definisikan tipe untuk produk
+// Definisikan tipe data Produk sesuai MongoDB
 interface Product {
-  id: string;
+  _id: string;
   name: string;
-  description: string;
-  image: string; // Pastikan ini 'image', bukan 'imageUrl'
   price: number;
-  slug: string;
+  description: string;
+  images: string[];
+  category: string;
 }
-
-// Fungsi untuk memformat mata uang
-function formatCurrency(value: number, currency: string = "IDR") {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 0,
-  }).format(value);
-}
-
-import Image from "next/image";
 
 export default function ProductCatalog() {
+  // PENTING: Inisialisasi state dengan array kosong [] biar gak error 'undefined'
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchProducts() {
+    const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/products");
-        if (!response.ok) {
-          throw new Error("Gagal mengambil data produk");
-        }
-        const result = await response.json();
-        setProducts(result.data);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
+        const res = await fetch("/api/products");
+        const data = await res.json();
+
+        // Safety Check: Pastikan data yang diterima benar-benar Array
+        if (Array.isArray(data)) {
+          setProducts(data);
         } else {
-          setError("Terjadi kesalahan yang tidak diketahui");
+          console.error("Format data salah:", data);
+          setProducts([]);
         }
+      } catch (error) {
+        console.error("Gagal ambil produk:", error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
-    }
+    };
 
     fetchProducts();
   }, []);
 
-  if (loading) {
+  // Tampilan saat Loading
+  if (isLoading) {
     return (
-      <p className="py-8 text-center text-slate-500">Memuat katalog produk...</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 animate-pulse">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+        ))}
+      </div>
     );
   }
 
-  if (error) {
-    return <p className="py-8 text-center text-red-500">Error: {error}</p>;
-  }
-
-  if (products.length === 0) {
+  // Tampilan jika Produk Kosong (FIX: Cek length dengan aman)
+  if (!products || products.length === 0) {
     return (
-      <p className="py-8 text-center text-slate-500">
-        Tidak ada produk untuk ditampilkan.
-      </p>
+      <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+        <p className="text-gray-500">Belum ada produk yang dijual saat ini.</p>
+      </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {products.map((product) => (
-        <div key={product.id} className="group relative">
-          <div className="aspect-h-1 aspect-w-1 lg:aspect-none w-full overflow-hidden rounded-md bg-gray-200 group-hover:opacity-75 lg:h-80 relative img-zoom">
-            <Image
-              src={product.image || "https://via.placeholder.com/300"}
-              alt={product.name}
-              fill
-              sizes="(max-width: 640px) 100vw, 25vw"
-              className="object-cover object-center"
-            />
+        <div 
+          key={product._id} 
+          className="group bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col"
+        >
+          {/* Gambar Produk */}
+          <div className="relative h-48 bg-gray-100 w-full">
+            {product.images && product.images.length > 0 ? (
+              <img 
+                src={product.images[0]} 
+                alt={product.name} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                No Image
+              </div>
+            )}
+            
+            {/* Badge Kategori */}
+            <span className="absolute top-2 right-2 bg-white/90 backdrop-blur text-xs font-medium px-2 py-1 rounded-md shadow-sm text-gray-700 capitalize">
+              {product.category}
+            </span>
           </div>
-          <div className="mt-4 flex justify-between">
-            <div>
-              <h3 className="text-sm text-gray-700">
-                <a href={`/products/${product.slug}`}>
-                  <span aria-hidden="true" className="absolute inset-0" />
-                  {product.name}
-                </a>
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {product.description}
-              </p>
-            </div>
-            <p className="text-sm font-medium text-gray-900">
-              {formatCurrency(product.price)}
+
+          {/* Info Produk */}
+          <div className="p-4 flex flex-col flex-grow">
+            <h3 className="font-semibold text-gray-800 line-clamp-1">{product.name}</h3>
+            <p className="text-sm text-gray-500 mt-1 line-clamp-2 flex-grow">
+              {product.description}
             </p>
+            
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-lg font-bold text-blue-600">
+                Rp {product.price.toLocaleString("id-ID")}
+              </span>
+              
+              <Link href={`/products/${product._id}`}>
+                <button className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-colors">
+                  <ShoppingCart size={18} />
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
       ))}

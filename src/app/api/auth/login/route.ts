@@ -1,40 +1,62 @@
-import { NextRequest, NextResponse } from "next/server";
-import { authenticateUser } from "../../_data/mockData";
-import { loginSchema } from "@/lib/validators";
-import { createSessionResponse } from "@/lib/session";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import bcrypt from "bcryptjs"; // Pastikan sudah npm install bcryptjs
+import connectDB from "@/lib/mongodb";
+import User from "@/models/User";
+import { createSessionResponse } from "@/lib/session"; // Fungsi yang sudah kita perbaiki tadi
 
-export async function POST(request: NextRequest) {
-  const payload = await request.json();
-  const parsed = loginSchema.safeParse(payload);
+const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
 
-  if (!parsed.success) {
-    return NextResponse.json(
-      { message: "Email atau password tidak valid." },
-      { status: 422 }
-    );
-  }
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
 
-  const { email, password } = parsed.data;
-  const user = authenticateUser(email, password);
-
-  if (!user) {
-    return NextResponse.json(
-      { message: "Email atau password salah." },
-      { status: 401 }
-    );
-  }
-
-  // Membuat sesi dan mengirimkan cookie sebagai respons
-  return await createSessionResponse(
-    { sub: user.id, email: user.email, role: "user" },
-    {
-      message: "Login berhasil.",
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        address: user.address,
-      },
+    // 1. Validasi Input
+    const parsed = LoginSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Input tidak valid" }, { status: 400 });
     }
-  );
+    const { email, password } = parsed.data;
+
+    // 2. Konek Database
+    await connectDB();
+
+    // 3. Cari User by Email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return NextResponse.json({ error: "Email atau password salah" }, { status: 401 });
+    }
+
+    // 4. Cek Password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return NextResponse.json({ error: "Email atau password salah" }, { status: 401 });
+    }
+
+    // 5. Buat Session & Cookie
+    // Payload ini yang akan disimpan di cookie user
+    const payload = {
+      sub: user._id.toString(),
+      email: user.email,
+      role: user.role, // 'buyer', 'seller', atau 'admin'
+      hasShop: user.hasShop
+    };
+
+    return await createSessionResponse(payload, { 
+      success: true,
+      user: { 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        hasShop: user.hasShop
+      } 
+    });
+
+  } catch (error: any) {
+    console.error("Login Error:", error);
+    return NextResponse.json({ error: "Terjadi kesalahan server" }, { status: 500 });
+  }
 }
