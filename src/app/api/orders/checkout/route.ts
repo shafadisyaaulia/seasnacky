@@ -1,58 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
-import { simulateCheckout, products, orders } from "../../_data/mockData";
+import connectDB from "@/lib/mongodb";
+import Order from "@/models/Order";   // Model Order MongoDB
+import Product from "@/models/Product"; // Model Product MongoDB
+import Shop from "@/models/Shop";     // Model Shop MongoDB
+import { getAuthUser } from "@/lib/session"; // Cek User Login
 
 export async function POST(request: NextRequest) {
   try {
+    await connectDB();
+    
+    // 1. Cek Login Pembeli
+    const user = await getAuthUser();
+    if (!user) {
+      return NextResponse.json({ message: "Silakan login untuk belanja" }, { status: 401 });
+    }
+
     const payload = await request.json();
-    const { userId, items, shippingAddress, recipientName, recipientPhone } = payload;
-    
-    // Check if it's a guest user
-    const isGuest = userId && userId.startsWith("guest-");
-    
-    let result;
-    if (isGuest) {
-      // Create order directly for guest user without checking user existence
-      const enrichedItems = items.map((item: any) => {
-        const product = products.find((p: any) => p.id === item.productId || p._id === item.productId);
-        return {
-          productId: item.productId,
-          quantity: item.quantity,
-          price: product ? product.price * item.quantity : 0,
-        };
-      });
-      const total = enrichedItems.reduce((sum: number, item: any) => sum + item.price, 0);
-      result = {
-        id: `INV-${Math.floor(Math.random() * 9000 + 1000)}`,
-        userId,
-        status: "pending",
-        paymentStatus: "pending",
-        total,
-        createdAt: new Date().toISOString(),
-        estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-        items: enrichedItems,
-        shippingAddress,
-        recipientName,
-        recipientPhone,
-      };
-      // Save to orders array
-      orders.push(result);
-    } else {
-      result = simulateCheckout(userId, items);
+    console.log("📦 Checkout Payload:", payload);
+
+    // Normalisasi Data:
+    // Tombol "Beli Sekarang" di Resep mengirim: { productId, quantity }
+    // Cart/Mock lama mungkin mengirim format lain. Kita fokus ke yang Resep dulu.
+    let targetProductId = payload.productId;
+    let targetQty = payload.quantity || 1;
+
+    // Jika formatnya items array (dari cart), ambil item pertama (MVP)
+    if (payload.items && payload.items.length > 0) {
+       targetProductId = payload.items[0].productId;
+       targetQty = payload.items[0].quantity || 1;
     }
 
-    if (!result) {
-      return NextResponse.json(
-        { message: "Gagal melakukan checkout. User tidak ditemukan." },
-        { status: 400 }
-      );
+    if (!targetProductId) {
+       return NextResponse.json({ message: "Data produk tidak valid" }, { status: 400 });
     }
 
-    return NextResponse.json(result, { status: 201 });
-  } catch (error) {
-    console.error("Checkout error:", error);
-    return NextResponse.json(
-      { message: "Internal server error", error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
-    );
+    // 2. Cari Produk di MongoDB
+    const product = await Product.findById(targetProductId);
+    if (!product) {
+      return NextResponse.json({ message: "Produk tidak ditemukan di Database" }, { status: 404 });
+    }
+
+    // 3. Cari Toko Penjual (Seller)
+    // Produk harus punya field 'shop' yang berisi ID Toko
+    if (!product.shop) {
+       return NextResponse.json({ message: "Produk ini tidak memiliki data toko (Data Lama/Rusak)" }, { status: 400 });
+    }
+
+    const shop = await Shop.findById(product.shop);
+    if (!shop) {
+       return NextResponse.json({ message: "Toko penjual tidak ditemukan" }, { status: 404 });
+    }
+
+    const sellerId = shop.owner; // ID User Penjual
+
+    // 4. SIMPAN KE MONGODB (Collection 'orders')
+    const newOrder = await Order.create({
+      sellerId: sellerId,        // Masuk ke dashboard seller ini
+      buyerName: user.name,      // Nama Pembeli (Kamu)
+      items: [
+        {
+          productName: product.name,
+          quantity: targetQty,
+          price: product.price
+        }
+      ],
+      totalAmount: product.price * targetQty,
+      status: "pending",
+      createdAt: new Date()
+    });
+
+    console.log("🎉 Order Real Berhasil:", newOrder._id);
+
+    return NextResponse.json(newOrder, { status: 201 });
+
+  } catch (error: any) {
+    console.error("Checkout DB Error:", error);
+    return NextResponse.json({ message: "Gagal checkout", error: error.message }, { status: 500 });
   }
 }
