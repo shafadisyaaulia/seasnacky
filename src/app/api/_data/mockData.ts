@@ -95,7 +95,7 @@ export const users: User[] = [
   },
 ];
 
-const products: Product[] = [
+export const products: Product[] = [
   {
     id: "prd-keripik-01",
     name: "Keripik Rumput Laut Signature",
@@ -221,7 +221,7 @@ const storageTips: StorageTip[] = [
   },
 ];
 
-const orders: Order[] = [
+export const orders: Order[] = [
   {
     id: "INV-9821",
     userId: "usr-001",

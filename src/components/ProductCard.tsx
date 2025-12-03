@@ -72,6 +72,17 @@ export default function ProductCard({ product }: { product: Product }) {
     }
   }
 
+  function buyNow() {
+    // Save product info untuk direct checkout
+    const directBuyData = {
+      productId: product.id,
+      quantity: 1,
+      isDirect: true,
+    };
+    sessionStorage.setItem("directBuy", JSON.stringify(directBuyData));
+    window.location.href = "/checkout?direct=true";
+  }
+
   return (
     <div className="group relative bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 hover:shadow-lg transition-shadow hover:ring-2 hover:ring-sky-200 hover-lift">
       <div className="relative">
@@ -125,17 +136,27 @@ export default function ProductCard({ product }: { product: Product }) {
               </div>
         </div>
 
-        <div>
+        <div className="flex gap-2">
           <button
             onClick={addToCart}
             disabled={loading}
-            className={`w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors btn-primary btn-press disabled:opacity-60`}
+            className={`flex-1 inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors border border-sky-600 text-sky-600 hover:bg-sky-50 disabled:opacity-60`}
             style={{ boxShadow: '0 1px 0 rgba(2,6,23,0.04)' }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l3-8H6.4" />
             </svg>
-            {loading ? "Menambahkan..." : added ? "Ditambahkan" : "Tambah ke Keranjang"}
+            {loading ? "..." : added ? "✓" : "Keranjang"}
+          </button>
+          <button
+            onClick={buyNow}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors btn-primary btn-press"
+            style={{ boxShadow: '0 1px 0 rgba(2,6,23,0.04)' }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            Beli Sekarang
           </button>
         </div>
       </div>

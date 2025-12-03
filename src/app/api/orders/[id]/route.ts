@@ -3,10 +3,12 @@ import { getOrderById } from "../../_data/mockData";
 
 export async function GET(
   _request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
+  const { id } = await context.params;
+  console.log("Fetching order with ID:", id);
   const order = getOrderById(id);
+  console.log("Found order:", order);
 
   if (!order) {
     return NextResponse.json(

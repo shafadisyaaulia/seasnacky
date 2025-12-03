@@ -86,9 +86,35 @@ export default function MarketplacePage() {
                 <div className="p-4 flex flex-col flex-grow">
                   <h3 className="font-semibold text-gray-900 line-clamp-1 mb-1">{product.name}</h3>
                   <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-grow">{product.description}</p>
-                  <div className="flex items-center justify-between mt-auto">
-                    <span className="text-lg font-bold text-blue-600">Rp {product.price.toLocaleString("id-ID")}</span>
-                    <button className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-colors"><ShoppingCart size={18} /></button>
+                  <div className="mt-auto">
+                    <div className="text-lg font-bold text-blue-600 mb-3">Rp {product.price.toLocaleString("id-ID")}</div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          // Add to cart logic
+                          alert("Ditambahkan ke keranjang!");
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
+                      >
+                        <ShoppingCart size={16} />
+                        <span className="hidden sm:inline">Keranjang</span>
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const directBuyData = {
+                            productId: product._id,
+                            quantity: 1,
+                            isDirect: true,
+                          };
+                          sessionStorage.setItem("directBuy", JSON.stringify(directBuyData));
+                          window.location.href = "/checkout?direct=true";
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                      >
+                        <ShoppingCart size={16} />
+                        Beli Sekarang
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
