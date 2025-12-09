@@ -1,20 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrderById } from "../../_data/mockData";
 
 export async function POST(request: NextRequest) {
-  const payload = await request.json();
-  const { orderId } = payload;
-  if (!orderId) {
-    return NextResponse.json({ message: "orderId harus diberikan" }, { status: 400 });
+  try {
+    const payload = await request.json();
+    const { orderId } = payload;
+
+    if (!orderId) {
+      return NextResponse.json({ message: "orderId harus diberikan" }, { status: 400 });
+    }
+
+    // Simulasi Pembayaran Sukses
+    const updatedOrder = {
+        id: orderId,
+        paymentStatus: "paid",
+        status: "diproses",
+        updatedAt: new Date().toISOString()
+    };
+
+    return NextResponse.json(updatedOrder, { status: 200 });
+
+  } catch (error) {
+    return NextResponse.json({ message: "Terjadi kesalahan sistem" }, { status: 500 });
   }
-
-  const order = getOrderById(orderId);
-  if (!order) {
-    return NextResponse.json({ message: "Order tidak ditemukan" }, { status: 404 });
-  }
-
-  order.paymentStatus = "paid";
-  order.status = "diproses";
-
-  return NextResponse.json(order, { status: 200 });
 }

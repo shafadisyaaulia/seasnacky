@@ -1,41 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/session";
-import { getDb } from "@/lib/mongodb";
+import connectDB from "@/lib/mongodb";
+import Shop from "@/models/Shop"; // Model Toko Mongoose
+import User from "@/models/User"; // Model User Mongoose (untuk update role)
 
+export async function POST(request: NextRequest) {
   try {
-    const session = await getAuthUser();
-    if (!session?.sub) {
+    await connectDB();
+    const user = await getAuthUser();
+
+    // Cek Login
+    if (!user) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-    const userId = session.sub;
+
+    const userId = user._id; // ID dari session/database
     const { name, city, address, description } = await request.json();
 
-    const db = await getDb();
-    if (!db) throw new Error("MongoDB not available");
-
-    // Cek apakah user sudah punya toko
-    const existingStore = await db.collection("stores").findOne({ userId });
+    // 1. Cek apakah user sudah punya toko (Pakai Mongoose findOne)
+    // Asumsi di Schema Shop field relasinya bernama 'owner'
+    const existingStore = await Shop.findOne({ owner: userId });
+    
     if (existingStore) {
       return NextResponse.json({ message: "Anda sudah memiliki toko." }, { status: 400 });
     }
 
-    // Update role user menjadi SELLER
-    await db.collection("users").updateOne({ _id: userId }, { $set: { role: "SELLER" } });
+    // 2. Update role user menjadi SELLER (Pakai Mongoose findByIdAndUpdate)
+    await User.findByIdAndUpdate(userId, { role: "seller" });
 
-    // Buat data toko baru dan relasikan ke user
-    const storeData = {
-      name,
-      city,
-      address,
-      description,
-      userId,
-      createdAt: new Date(),
-    };
-    const result = await db.collection("stores").insertOne(storeData);
-    const store = await db.collection("stores").findOne({ _id: result.insertedId });
+    // 3. Buat data toko baru (Pakai Mongoose create)
+    const newShop = await Shop.create({
+        name,
+        city,
+        address,
+        description,
+        owner: userId, // Relasi ke User
+        image: "", // Default kosong atau placeholder
+        rating: 0
+    });
 
-    return NextResponse.json({ message: "Toko berhasil dibuat.", data: store }, { status: 201 });
-  } catch (err) {
-    return NextResponse.json({ message: (err as Error).message }, { status: 500 });
+    return NextResponse.json({ message: "Toko berhasil dibuat.", data: newShop }, { status: 201 });
+
+  } catch (err: any) {
+    console.error("Error Open Shop:", err);
+    return NextResponse.json({ message: err.message }, { status: 500 });
   }
 }

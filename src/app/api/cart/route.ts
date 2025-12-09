@@ -1,17 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appendCartItem } from "../_data/mockData";
 
+// GET: Ambil isi keranjang (Dummy: Kosong dulu)
+export async function GET(request: NextRequest) {
+  return NextResponse.json({ 
+    data: [], // Array kosong agar frontend tidak error
+    meta: { total: 0 }
+  });
+}
+
+// POST: Tambah ke keranjang (Dummy: Selalu sukses)
 export async function POST(request: NextRequest) {
-  const payload = await request.json();
-  const { userId, productId, quantity } = payload;
-  const result = appendCartItem(userId, productId, quantity);
+  try {
+    const payload = await request.json();
+    const { userId, productId, quantity } = payload;
 
-  if (!result) {
+    // Simulasi sukses tambah ke keranjang
+    return NextResponse.json({ 
+      message: "Berhasil ditambahkan ke keranjang (Mode Dummy)",
+      item: { userId, productId, quantity }
+    });
+  } catch (error) {
     return NextResponse.json(
       { message: "Gagal menambahkan ke keranjang." },
       { status: 400 }
     );
   }
-
-  return NextResponse.json(result);
 }

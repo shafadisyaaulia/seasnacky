@@ -1,18 +1,17 @@
 import mongoose from "mongoose";
 
-// Mengambil URL dari env
-const DATABASE_URL = process.env.DATABASE_URL;
+const MONGODB_URI = process.env.MONGODB_URI as string;
 
-if (!DATABASE_URL) {
-  throw new Error("Please define the DATABASE_URL environment variable inside .env");
+if (!MONGODB_URI) {
+  throw new Error("Please define the MONGODB_URI environment variable inside .env");
 }
 
-// Interface untuk caching koneksi agar tidak re-connect terus menerus
 interface MongooseCache {
-  conn: mongoose.Connection | null;
-  promise: Promise<mongoose.Connection> | null;
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
 }
 
+// Menambahkan properti mongoose ke global object untuk caching koneksi (biar gak overload)
 declare global {
   var mongoose: MongooseCache;
 }
@@ -33,9 +32,8 @@ async function connectDB() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(DATABASE_URL!, opts).then((mongoose) => {
-      console.log("✅ Berhasil connect ke MongoDB via Mongoose");
-      return mongoose.connection;
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      return mongoose;
     });
   }
 
@@ -49,4 +47,5 @@ async function connectDB() {
   return cached.conn;
 }
 
+// INI KUNCINYA: Harus ada export default biar file lain bisa import "connectDB from ..."
 export default connectDB;

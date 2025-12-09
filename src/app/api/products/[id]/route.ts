@@ -1,19 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getProductById } from "../../_data/mockData";
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/mongodb";
+import Product from "@/models/Product";
 
 export async function GET(
-  _request: NextRequest,
-  context: { params: { id: string } }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
-  const product = getProductById(id);
+  try {
+    const { id } = await params;
+    await connectDB();
 
-  if (!product) {
-    return NextResponse.json(
-      { message: "Produk tidak ditemukan." },
-      { status: 404 }
-    );
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
+    }
+
+    return NextResponse.json({ data: product });
+  } catch (error) {
+    return NextResponse.json({ error: "Gagal ambil produk" }, { status: 500 });
   }
-
-  return NextResponse.json({ data: product });
 }

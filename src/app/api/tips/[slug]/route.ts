@@ -1,19 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
-import { listTips } from "../../_data/mockData";
+import { NextResponse } from "next/server";
+
+const tips = [
+  {
+    id: 1,
+    title: "Cara Menyimpan Ikan Agar Tetap Segar",
+    slug: "cara-menyimpan-ikan",
+    content: "Cuci bersih ikan, buang isi perut, simpan di wadah tertutup...",
+    date: "2024-02-01",
+    author: "Admin",
+  },
+  {
+    id: 2,
+    title: "Ciri-ciri Udang Segar",
+    slug: "ciri-udang-segar",
+    content: "Kulit keras, bau segar, warna bening...",
+    date: "2024-02-05",
+    author: "Admin",
+  },
+];
 
 export async function GET(
-  _request: NextRequest,
-  context: { params: { slug: string } }
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = context.params;
-  const tips = listTips();
-  const tip = tips.find((p) => p.id === slug);
+  const { slug } = await params; // Next.js 15 wajib await params
+  
+  const tip = tips.find((t) => t.slug === slug);
 
   if (!tip) {
-    return NextResponse.json(
-      { message: "Tips tidak ditemukan." },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Tips tidak ditemukan" }, { status: 404 });
   }
 
   return NextResponse.json({ data: tip });

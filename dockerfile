@@ -1,32 +1,52 @@
-# 1. Gunakan base image Node.js yang direkomendasikan untuk Next.js
-FROM node:18-alpine AS base
+# 1. Base image
+FROM node:20-alpine AS base
 
-# 2. Atur direktori kerja di dalam kontainer
+# 2. Install dependencies (hanya jika package.json berubah)
+FROM base AS deps
 WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci
 
-# 3. Salin file package.json dan package-lock.json
-COPY package*.json ./
-
-# 4. Instal dependensi
-RUN npm install
-
-# 5. Salin sisa file proyek
+# 3. Build source code
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# 6. Build aplikasi Next.js
+# Matikan telemetri Next.js biar gak menuhin log
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# 👇 TAMBAHKAN DUMMY ENV DI SINI (Biar build lolos)
+# Nilai ini cuma dipakai saat build, nanti ditimpa sama .env asli
+ENV MONGODB_URI="mongodb://dummy-for-build"
+ENV NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="dummy-cloud"
+
+# Build project
 RUN npm run build
 
-# 7. Buat image production yang lebih kecil
-FROM node:18-alpine AS production
-
+# 4. Production image (Hanya ambil hasil jadi yang kecil)
+FROM base AS runner
 WORKDIR /app
 
-# Salin hasil build dari tahap sebelumnya
-COPY --from=base /app/.next ./.next
-COPY --from=base /app/node_modules ./node_modules
-COPY --from=base /app/package.json ./package.json
-COPY --from=base /app/public ./public
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
 
-# 8. Tentukan perintah untuk menjalankan aplikasi
-CMD ["npm", "start"]
+# Buat user system biar aman (bukan root)
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
+# Copy public folder (gambar, aset, dll)
+COPY --from=builder /app/public ./public
+
+# COPY HASIL STANDALONE (Kunci biar ringan!)
+# Folder .next/standalone ini otomatis dibuat karena setting next.config.ts kamu tadi
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+ENV PORT 3000
+
+# Jalankan langsung pakai node (bukan npm start)
+CMD ["node", "server.js"]

@@ -1,23 +1,31 @@
-# File Docker itu sendiri
-Dockerfile
-.dockerignore
-
-# Dependensi
+# --- WAJIB DI-IGNORE (Biar Build Cepat) ---
 node_modules
+.next
+.git
 
-# Next.js build artifacts
-.next/
-out/
+# --- Infrastruktur Monitoring ---
+# Kita tidak butuh config Loki masuk ke dalam container Next.js
+grafana-loki
 
-# Log
+# --- Log & Debugging Lokal ---
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# File environment
-.env*
+# --- File Docker ---
+Dockerfile
+.dockerignore
+docker-compose.yaml
 
-# Lainnya
+# --- Environment & Rahasia ---
+# Jangan dicopy ke image demi keamanan. 
+# Kita akan inject lewat docker-compose.yaml nanti.
+.env*
+.env.local
+
+# --- Lainnya ---
 .DS_Store
 README.md
+.vscode
+.idea

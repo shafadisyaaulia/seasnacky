@@ -1,69 +1,101 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/mongodb";
 import Product from "@/models/Product";
-import Shop from "@/models/Shop";
 
-// Paksa agar tidak ada cache
+// Paksa agar API ini selalu fresh (tidak di-cache statis)
 export const dynamic = "force-dynamic";
 
+// 1. GET: Ambil Produk (Bisa Filter Search & Category)
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    const { searchParams } = request.nextUrl;
-    const category = searchParams.get("category");
     
-    let query: any = {};
-    if (category) query.category = category;
+    const { searchParams } = request.nextUrl;
+    const search = searchParams.get("search");
+    const category = searchParams.get("category");
+    const id = searchParams.get("id"); // Support ambil by ID juga
 
+    // Jika ada parameter ID, kembalikan 1 produk saja
+    if (id) {
+      const product = await Product.findById(id);
+      if (!product) {
+        return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
+      }
+      return NextResponse.json(product);
+    }
+
+    // Build Query MongoDB
+    const query: any = {};
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } }, // 'i' artinya tidak peduli huruf besar/kecil
+        { description: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    if (category && category !== "all") {
+      query.category = category;
+    }
+
+    // Ambil data dari MongoDB
     const products = await Product.find(query).sort({ createdAt: -1 });
-    return NextResponse.json(products);
-  } catch (error) {
-    return NextResponse.json({ error: "Gagal ambil data" }, { status: 500 });
+
+    return NextResponse.json(products); // Langsung return array biar frontend gampang mapping
+
+  } catch (error: any) {
+    console.error("Error GET Products:", error);
+    return NextResponse.json({ error: "Gagal mengambil data produk" }, { status: 500 });
   }
 }
 
+// 2. POST: Tambah Produk Baru (Untuk Seller)
 export async function POST(request: NextRequest) {
-  // CCTV 1: Cek apakah API dipanggil
-  console.log("🔥 API POST /api/products DIPANGGIL!");
-
   try {
     await connectDB();
-    console.log("✅ Database Connected");
-
     const body = await request.json();
-    // CCTV 2: Lihat data yang dikirim dari Frontend
-    console.log("📦 Data yang diterima:", body);
 
-    const { name, price, category, description, image, userId } = body;
-
-    // 1. Cari Toko
-    const shop = await Shop.findOne({ owner: userId });
-    
-    // CCTV 3: Apakah toko ketemu?
-    if (!shop) {
-      console.error("❌ Toko tidak ditemukan untuk User ID:", userId);
-      return NextResponse.json({ error: "Kamu belum punya toko!" }, { status: 400 });
+    // Validasi sederhana
+    if (!body.name || !body.price) {
+      return NextResponse.json({ error: "Nama dan Harga wajib diisi" }, { status: 400 });
     }
-    console.log("🏪 Toko ditemukan:", shop.name, "(ID:", shop._id, ")");
 
-    // 2. Buat Produk
     const newProduct = await Product.create({
-      shop: shop._id,
-      name,
-      price,
-      category,
-      description,
-      images: [image], 
+      name: body.name,
+      description: body.description,
+      price: Number(body.price),
+      category: body.category || "Umum",
+      stock: Number(body.stock) || 1,
+      image: body.image || "", // URL Cloudinary
+      images: body.image ? [body.image] : [], // Support array images
+      shop: body.shop, // ID Toko (Seller)
+      sellerId: body.sellerId, // ID User Seller
     });
-
-    // CCTV 4: Berhasil simpan?
-    console.log("🎉 SUKSES SIMPAN KE MONGO:", newProduct);
 
     return NextResponse.json(newProduct, { status: 201 });
 
   } catch (error: any) {
-    // CCTV 5: Kalau error, errornya apa?
-    console.error("☠️ ERROR BEHIND THE SCENE:", error);
+    console.error("Error Create Product:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+// 3. DELETE: Hapus Produk (Untuk Seller)
+export async function DELETE(request: NextRequest) {
+  try {
+    await connectDB();
+    const { searchParams } = request.nextUrl;
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID Produk diperlukan" }, { status: 400 });
+    }
+
+    await Product.findByIdAndDelete(id);
+
+    return NextResponse.json({ message: "Produk berhasil dihapus" });
+  } catch (error: any) {
+    console.error("Error Delete Product:", error);
+    return NextResponse.json({ error: "Gagal menghapus produk" }, { status: 500 });
   }
 }
