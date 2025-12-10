@@ -1,5 +1,5 @@
 ﻿import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { SignJWT, jwtVerify } from "jose";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
@@ -129,6 +129,48 @@ export async function getAuthUser() {
 
   } catch (error) {
     // Token tidak valid/expired
+    return null;
+  }
+}
+
+// ----------------------------------------------------------------------
+// 5. FUNGSI: Get User from Request (untuk API routes)
+// ----------------------------------------------------------------------
+export async function getUserFromRequest(request: NextRequest) {
+  const session = request.cookies.get(COOKIE_NAME)?.value;
+
+  if (!session) return null;
+
+  try {
+    const { payload } = await jwtVerify(session, encodedKey, {
+      algorithms: ["HS256"],
+    });
+
+    if (!payload || !payload.sub) return null;
+
+    try {
+      await connectDB();
+      const user = await User.findById(payload.sub).select("-password");
+      
+      if (!user) return null;
+
+      return {
+        id: user._id.toString(),
+        role: user.role,
+        name: user.name,
+        email: user.email,
+        hasShop: user.hasShop || false,
+      };
+    } catch (dbError) {
+      console.warn("Session DB Lookup Failed:", dbError);
+      return {
+        id: payload.sub as string,
+        role: payload.role as string,
+        name: payload.name as string,
+        email: payload.email as string,
+      };
+    }
+  } catch (error) {
     return null;
   }
 }
