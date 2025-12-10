@@ -1,31 +1,51 @@
 "use client";
 
 import React, { useContext, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDirect = searchParams.get("direct") === "true";
+  
   const cart = useCart();
-  const items = cart.items;
+  const [items, setItems] = useState<Array<{productId: string, quantity: number}>>([]);
   const [me, setMe] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [provinces, setProvinces] = useState<Array<{id: string, name: string}>>([]);
   const [provinceId, setProvinceId] = useState<string>("");
-  const [cities, setCities] = useState<Array<{id: string, name: string}>>([]);
+  const [cities, setCities] = useState<Array<{id: string, name: string, shippingCost?: number}>>([]);
   const [cityId, setCityId] = useState<string>("");
+  const [shippingCost, setShippingCost] = useState<number>(0);
   const [products, setProducts] = useState<Record<string, any>>({});
 
   useEffect(() => {
     let mounted = true;
+    
+    // Load items: either from direct buy or from cart
+    if (isDirect) {
+      const directData = sessionStorage.getItem("directBuy");
+      if (directData) {
+        const parsed = JSON.parse(directData);
+        setItems([{ productId: parsed.productId, quantity: parsed.quantity || 1 }]);
+      }
+    } else {
+      setItems(cart.items || []);
+    }
+    
     fetch("/api/me")
       .then((r) => r.json())
       .then((json) => {
         if (!mounted) return;
         const u = json.data ?? null;
         setMe(u);
+        if (u?.name) setName(u.name);
+        if (u?.phone) setPhone(u.phone);
         if (u?.address) setAddress(u.address);
       })
       .catch(() => {})
@@ -54,12 +74,13 @@ export default function CheckoutPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [isDirect, cart.items]);
 
   useEffect(() => {
     if (!provinceId) {
       setCities([]);
       setCityId("");
+      setShippingCost(0);
       return;
     }
     fetch(`/api/regions/cities?provinceId=${provinceId}`)
@@ -67,34 +88,77 @@ export default function CheckoutPage() {
       .then((json) => {
         setCities(json.data ?? []);
         setCityId("");
+        setShippingCost(0);
       })
       .catch(() => {
         setCities([]);
         setCityId("");
+        setShippingCost(0);
       });
   }, [provinceId]);
 
-  const handleCheckout = async () => {
-    if (!me) {
-      window.location.href = `/user/login?next=/checkout`;
-      return;
+  // Update shipping cost when city changes
+  useEffect(() => {
+    if (cityId) {
+      const selectedCity = cities.find(c => c.id === cityId);
+      setShippingCost(selectedCity?.shippingCost || 0);
+    } else {
+      setShippingCost(0);
     }
+  }, [cityId, cities]);
+
+  const handleCheckout = async () => {
+    // Validation
+    if (!name.trim()) return alert("Nama lengkap harus diisi.");
+    if (!phone.trim()) return alert("Nomor telepon harus diisi.");
+    if (!provinceId) return alert("Provinsi harus dipilih.");
+    if (!cityId) return alert("Kota harus dipilih.");
+    if (!address.trim()) return alert("Alamat lengkap harus diisi.");
     if (!items || items.length === 0) return alert("Keranjang kosong.");
+    
     setLoading(true);
     try {
+      // Re-fetch user to get latest data
+      const meRes = await fetch("/api/me");
+      const meJson = await meRes.json();
+      let userId = meJson.data?.id ?? null;
+      
+      // If no user logged in, create guest user
+      if (!userId) {
+        userId = `guest-${Date.now()}`;
+      }
+      
+      const selectedProvince = provinces.find(p => p.id === provinceId);
+      const selectedCity = cities.find(c => c.id === cityId);
+      
       const payload = {
-        userId: me.id,
+        userId,
+        isGuest: !meJson.data?.id,
+        customerName: name,
+        customerPhone: phone,
         items: items.map((it: any) => ({ productId: it.productId, quantity: it.quantity })),
-        shippingAddress: address,
+        shippingAddress: `${address}, ${selectedCity?.name}, ${selectedProvince?.name}`,
       };
+      
       const res = await fetch("/api/orders/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      
       if (!res.ok) throw new Error("checkout failed");
       const data = await res.json();
-      if (cart?.clear) cart.clear();
+      
+      // Save to localStorage as backup
+      localStorage.setItem(`order_${data.id}`, JSON.stringify(data));
+      
+      // Clear cart if not direct buy
+      if (!isDirect && cart?.clear) {
+        cart.clear();
+      } else if (isDirect) {
+        sessionStorage.removeItem("directBuy");
+      }
+      
       router.push(`/user/orders/${data.id}`);
     } catch (err) {
       console.error(err);
@@ -109,7 +173,9 @@ export default function CheckoutPage() {
   return (
     <main className="max-w-6xl mx-auto py-12 px-4">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-semibold text-sky-800">Checkout</h1>
+        <h1 className="text-3xl font-semibold text-sky-800">
+          {isDirect ? "Checkout Langsung" : "Checkout"}
+        </h1>
         <div className="text-sm text-sky-600">SeaSnacky • Pilihan Lautan</div>
       </div>
 
@@ -119,17 +185,29 @@ export default function CheckoutPage() {
             <span className="w-6 h-6 bg-sky-100 rounded-full flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-sky-700" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M12 21s8-4 8-10V6l-8-4-8 4v5c0 6 8 10 8 10z" /></svg>
             </span>
-            Alamat Pengiriman
+            Informasi Pengiriman
           </h2>
           <div className="grid gap-4 md:grid-cols-2">
-            <input type="text" placeholder="Nama Lengkap" className="rounded-md border p-2" />
-            <input type="text" placeholder="Nomor Telepon" className="rounded-md border p-2" />
+            <input 
+              type="text" 
+              placeholder="Nama Lengkap *" 
+              className="rounded-md border p-2"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <input 
+              type="text" 
+              placeholder="Nomor Telepon *" 
+              className="rounded-md border p-2"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
             <select
               className="rounded-md border p-2 md:col-span-2"
               value={provinceId}
               onChange={(e) => setProvinceId(e.target.value)}
             >
-              <option value="">Cari dan pilih provinsi</option>
+              <option value="">Pilih provinsi *</option>
               {provinces.map((prov) => (
                 <option key={prov.id} value={prov.id}>{prov.name}</option>
               ))}
@@ -140,14 +218,21 @@ export default function CheckoutPage() {
               onChange={(e) => setCityId(e.target.value)}
               disabled={!provinceId || cities.length === 0}
             >
-              <option value="">Pilih kota terlebih dahulu</option>
+              <option value="">Pilih kota *</option>
               {cities.map((city) => (
                 <option key={city.id} value={city.id}>{city.name}</option>
               ))}
             </select>
-            <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Alamat lengkap (nama jalan, nomor rumah, RT/RW, dll)" className="w-full rounded-md border p-2 min-h-[80px] md:col-span-2" />
+            <textarea 
+              value={address} 
+              onChange={(e) => setAddress(e.target.value)} 
+              placeholder="Alamat lengkap (nama jalan, nomor rumah, RT/RW, dll) *" 
+              className="w-full rounded-md border p-2 min-h-[80px] md:col-span-2" 
+            />
           </div>
-          <div className="mt-4 text-xs text-sky-600 bg-sky-50 rounded p-2">Lengkapi semua field alamat untuk melihat opsi pengiriman yang tersedia.</div>
+          <div className="mt-4 text-xs text-sky-600 bg-sky-50 rounded p-2">
+            * Wajib diisi. {isDirect ? "Anda sedang melakukan pembelian langsung." : "Pesanan dari keranjang Anda."}
+          </div>
         </section>
 
         <aside className="space-y-6">
@@ -184,11 +269,11 @@ export default function CheckoutPage() {
             </div>
             <div className="flex justify-between text-sm text-sky-600 mb-2">
               <div>Ongkos Kirim</div>
-              <div>Belum dipilih</div>
+              <div>{shippingCost > 0 ? `Rp ${shippingCost.toLocaleString("id-ID")}` : "Pilih kota dulu"}</div>
             </div>
             <div className="border-t pt-3 flex justify-between items-center">
               <div className="text-sm text-sky-700 font-medium">Total</div>
-              <div className="text-xl font-semibold text-sky-800">Rp {subtotal.toLocaleString("id-ID")}</div>
+              <div className="text-xl font-semibold text-sky-800">Rp {(subtotal + shippingCost).toLocaleString("id-ID")}</div>
             </div>
             <div className="mt-4">
               <button onClick={handleCheckout} disabled={loading} className="block w-full text-center rounded-md bg-sky-700 text-white px-4 py-2 disabled:opacity-60">

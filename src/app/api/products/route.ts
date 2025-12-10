@@ -21,7 +21,10 @@ export async function GET(request: NextRequest) {
       if (!product) {
         return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
       }
-      return NextResponse.json(product);
+      return NextResponse.json({
+        ...product.toObject(),
+        id: product._id.toString(),
+      });
     }
 
     // Build Query MongoDB
@@ -41,7 +44,13 @@ export async function GET(request: NextRequest) {
     // Ambil data dari MongoDB
     const products = await Product.find(query).sort({ createdAt: -1 });
 
-    return NextResponse.json(products); // Langsung return array biar frontend gampang mapping
+    // Transform to include id field
+    const result = products.map(p => ({
+      ...p.toObject(),
+      id: p._id.toString(),
+    }));
+
+    return NextResponse.json(result);
 
   } catch (error: any) {
     console.error("Error GET Products:", error);
