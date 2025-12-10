@@ -16,12 +16,13 @@ type Product = {
 export default function CartPage() {
   const { items, updateItem, removeItem, clear } = useCart();
   const [products, setProducts] = useState<Record<string, Product>>({});
-
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
   useEffect(() => {
     let mounted = true;
-    async function loadAll() {
+   async function loadAll() {
       try {
-        const res = await fetch("/api/products");
+        // Gunakan URL LENGKAP
+        const res = await fetch(`${BASE_URL}/api/products`); // <--- PERBAIKAN DI SINI!
         if (!res.ok) return;
         const data = await res.json();
         // data may be { data: [...] } or list

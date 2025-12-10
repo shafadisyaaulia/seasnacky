@@ -1,7 +1,7 @@
 import Link from "next/link";
 import ProductCatalog from "@/components/ProductCatalog";
 import { ArrowRight, Star, BookOpen, Lightbulb, Users } from "lucide-react";
-import logger from "@/lib/logger"; // 👈 1. IMPORT LOGGER (PENTING!)
+// import logger from "@/lib/logger"; // 👈 1. IMPORT LOGGER (PENTING!)
 
 // --- DATA DUMMY SEMENTARA ---
 const testimonials = [
@@ -54,11 +54,11 @@ const articles = [
 
 export default function Home() {
   // 👇 2. KIRIM LOG OTOMATIS SAAT HALAMAN DIBUKA
-  logger.info("Seseorang membuka Halaman Home SeaSnacky", { 
-    page: "Home", 
-    role: "Guest/User",
-    timestamp: new Date().toISOString()
-  });
+  console.log("Seseorang membuka Halaman Home SeaSnacky");
+  //   page: "Home", 
+  //   role: "Guest/User",
+  //   timestamp: new Date().toISOString()
+  // });
 
   return (
     <main className="min-h-screen bg-white">
