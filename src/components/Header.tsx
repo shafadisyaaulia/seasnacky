@@ -12,12 +12,13 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const router = useRouter();
-  const cart = useContext(CartContext as any);
+  const cart = useContext(CartContext);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Hitung Keranjang
   useEffect(() => {
-    setCartCount((cart?.items ?? []).reduce((s: number, it: any) => s + (it.quantity || 0), 0));
+    if (!cart) return;
+    setCartCount(cart.items.reduce((s: number, it: any) => s + (it.quantity || 0), 0));
   }, [cart?.items]);
 
   // Ambil Data User (Termasuk Role)

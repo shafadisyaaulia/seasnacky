@@ -9,14 +9,19 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
     
-    // 1. Cek Login Pembeli
+    // 1. Cek Login Pembeli - WAJIB LOGIN
     const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json({ message: "Silakan login untuk belanja" }, { status: 401 });
+    if (!user || !user.sub) {
+      return NextResponse.json({ 
+        message: "Silakan login terlebih dahulu untuk melakukan checkout" 
+      }, { status: 401 });
     }
 
     const payload = await request.json();
     console.log("📦 Checkout Payload:", payload);
+    
+    const userId = user.sub;
+    const buyerName = payload.customerName || user.name || "User";
 
     // Normalisasi Data:
     // Tombol "Beli Sekarang" di Resep mengirim: { productId, quantity }
@@ -56,9 +61,12 @@ export async function POST(request: NextRequest) {
     // 4. SIMPAN KE MONGODB (Collection 'orders')
     const newOrder = await Order.create({
       sellerId: sellerId,        // Masuk ke dashboard seller ini
-      buyerName: user.name,      // Nama Pembeli (Kamu)
+      buyerName: buyerName,      // Nama Pembeli
+      recipientName: buyerName,
+      shippingAddress: payload.shippingAddress || "",
       items: [
         {
+          productId: product._id,
           productName: product.name,
           quantity: targetQty,
           price: product.price
@@ -71,7 +79,13 @@ export async function POST(request: NextRequest) {
 
     console.log("🎉 Order Real Berhasil:", newOrder._id);
 
-    return NextResponse.json(newOrder, { status: 201 });
+    return NextResponse.json({
+      id: newOrder._id.toString(),
+      orderId: newOrder._id.toString(),
+      status: newOrder.status,
+      totalAmount: newOrder.totalAmount,
+      message: "Order berhasil dibuat"
+    }, { status: 201 });
 
   } catch (error: any) {
     console.error("Checkout DB Error:", error);

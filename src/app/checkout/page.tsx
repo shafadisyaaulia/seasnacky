@@ -27,26 +27,35 @@ export default function CheckoutPage() {
   useEffect(() => {
     let mounted = true;
     
-    // Load items: either from direct buy or from cart
-    if (isDirect) {
-      const directData = sessionStorage.getItem("directBuy");
-      if (directData) {
-        const parsed = JSON.parse(directData);
-        setItems([{ productId: parsed.productId, quantity: parsed.quantity || 1 }]);
-      }
-    } else {
-      setItems(cart.items || []);
-    }
-    
+    // Check if user is logged in
     fetch("/api/me")
       .then((r) => r.json())
       .then((json) => {
         if (!mounted) return;
         const u = json.data ?? null;
+        
+        // Redirect to login if not logged in
+        if (!u) {
+          alert("Anda harus login terlebih dahulu untuk melakukan checkout");
+          router.push("/login");
+          return;
+        }
+        
         setMe(u);
         if (u?.name) setName(u.name);
         if (u?.phone) setPhone(u.phone);
         if (u?.address) setAddress(u.address);
+        
+        // Load items after confirming user is logged in
+        if (isDirect) {
+          const directData = sessionStorage.getItem("directBuy");
+          if (directData) {
+            const parsed = JSON.parse(directData);
+            setItems([{ productId: parsed.productId, quantity: parsed.quantity || 1 }]);
+          }
+        } else {
+          setItems(cart.items || []);
+        }
       })
       .catch(() => {})
       .finally(() => {
@@ -118,27 +127,17 @@ export default function CheckoutPage() {
     
     setLoading(true);
     try {
-      // Re-fetch user to get latest data
-      const meRes = await fetch("/api/me");
-      const meJson = await meRes.json();
-      let userId = meJson.data?.id ?? null;
-      
-      // If no user logged in, create guest user
-      if (!userId) {
-        userId = `guest-${Date.now()}`;
-      }
-      
       const selectedProvince = provinces.find(p => p.id === provinceId);
       const selectedCity = cities.find(c => c.id === cityId);
       
       const payload = {
-        userId,
-        isGuest: !meJson.data?.id,
         customerName: name,
         customerPhone: phone,
         items: items.map((it: any) => ({ productId: it.productId, quantity: it.quantity })),
         shippingAddress: `${address}, ${selectedCity?.name}, ${selectedProvince?.name}`,
       };
+      
+      console.log("Sending checkout request:", payload);
       
       const res = await fetch("/api/orders/checkout", {
         method: "POST",
@@ -146,20 +145,38 @@ export default function CheckoutPage() {
         body: JSON.stringify(payload),
       });
       
-      if (!res.ok) throw new Error("checkout failed");
-      const data = await res.json();
+      console.log("Checkout response status:", res.status);
       
-      // Save to localStorage as backup
-      localStorage.setItem(`order_${data.id}`, JSON.stringify(data));
-      
-      // Clear cart if not direct buy
-      if (!isDirect && cart?.clear) {
-        cart.clear();
-      } else if (isDirect) {
-        sessionStorage.removeItem("directBuy");
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Checkout error:", errorData);
+        if (res.status === 401) {
+          alert("Sesi Anda telah berakhir. Silakan login kembali.");
+          router.push("/login");
+          return;
+        }
+        throw new Error(errorData.message || "checkout failed");
       }
       
-      router.push(`/user/orders/${data.id}`);
+      const data = await res.json();
+      console.log("Checkout success:", data);
+      
+      // Save order details for payment page
+      sessionStorage.setItem("pendingOrder", JSON.stringify({
+        orderId: data.id,
+        total: subtotal + shippingCost,
+        customerName: name,
+        items: items.map((it: any) => ({
+          productId: it.productId,
+          name: products[it.productId]?.name,
+          quantity: it.quantity,
+          price: products[it.productId]?.price
+        })),
+        isDirect
+      }));
+      
+      // Redirect to payment page
+      router.push(`/payment?orderId=${data.id}`);
     } catch (err) {
       console.error(err);
       alert("Gagal melakukan checkout. Coba lagi.");

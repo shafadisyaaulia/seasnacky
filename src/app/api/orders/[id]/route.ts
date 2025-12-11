@@ -22,11 +22,13 @@ export async function GET(
       path: "items.productId",
       model: Product,
       select: "name image price images"
-    });
+    }).lean(); // ✅ Convert to plain object
 
     if (!order) {
       return NextResponse.json({ error: "Pesanan tidak ditemukan." }, { status: 404 });
     }
+
+    console.log("📦 Order found:", order); // Debug log
 
     return NextResponse.json({ data: order });
 

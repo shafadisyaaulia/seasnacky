@@ -14,16 +14,19 @@ const OrderSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true },
   status: { 
     type: String, 
-    enum: ["pending", "process", "shipped", "completed", "cancelled"], 
+    enum: ["pending", "paid", "process", "shipped", "completed", "cancelled"], 
     default: "pending" 
   },
   shippingAddress: { type: String }, 
   recipientName: { type: String },
   
-  // TAMBAHAN BARU:
-  trackingNumber: { type: String }, // <--- Nomor Resi Disimpan Disini
+  // Payment info
+  paymentMethod: { type: String }, // qris, transfer, etc
+  paymentDate: { type: Date },
+  trackingNumber: { type: String },
 
   createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
 const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);
