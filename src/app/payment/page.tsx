@@ -16,13 +16,28 @@ export default function PaymentPage() {
   const [countdown, setCountdown] = useState(600); // 10 minutes
   const [paymentMethod, setPaymentMethod] = useState<"qris" | "cod">("qris");
   const [loading, setLoading] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState("");
+  const [showNotification, setShowNotification] = useState(false);
 
   useEffect(() => {
     const pending = sessionStorage.getItem("pendingOrder");
     if (pending) {
       setOrderData(JSON.parse(pending));
     }
-  }, []);
+    
+    // Generate payment URL using current host
+    if (typeof window !== "undefined" && orderId) {
+      const host = window.location.hostname;
+      const port = window.location.port;
+      const protocol = window.location.protocol;
+      const amount = pending ? JSON.parse(pending).total : 0;
+      
+      // Gunakan IP yang sama dengan yang dibuka di browser
+      // Jika buka dengan 192.168.1.38, QR juga akan pakai 192.168.1.38
+      const url = `${protocol}//${host}${port ? ':' + port : ''}/payment/confirm?orderId=${orderId}&amount=${amount}`;
+      setPaymentUrl(url);
+    }
+  }, [orderId]);
 
   useEffect(() => {
     if (countdown <= 0 || paymentMethod === "cod") return;
@@ -31,6 +46,53 @@ export default function PaymentPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, [countdown, paymentMethod]);
+
+  // Polling: Cek status pembayaran setiap 3 detik
+  useEffect(() => {
+    if (!orderId || paymentMethod === "cod") return;
+    
+    const checkPaymentStatus = async () => {
+      try {
+        const res = await fetch(`/api/orders/${orderId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.data?.status === "paid") {
+            // Pembayaran berhasil dari HP!
+            setShowNotification(true);
+            
+            // Play notification sound (optional)
+            if (typeof Audio !== 'undefined') {
+              try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTUIGWS57OufTRAMUKbj8LZjHAY5kdj');
+                audio.play().catch(() => {});
+              } catch (e) {}
+            }
+            
+            // Redirect setelah 3 detik
+            setTimeout(() => {
+              if (orderData?.isDirect) {
+                sessionStorage.removeItem("directBuy");
+              } else {
+                clear();
+              }
+              sessionStorage.removeItem("pendingOrder");
+              router.push(`/payment/success?orderId=${orderId}`);
+            }, 3000);
+          }
+        }
+      } catch (err) {
+        console.error("Error checking payment status:", err);
+      }
+    };
+    
+    // Check immediately
+    checkPaymentStatus();
+    
+    // Then check every 3 seconds
+    const interval = setInterval(checkPaymentStatus, 3000);
+    
+    return () => clearInterval(interval);
+  }, [orderId, paymentMethod, router, clear, orderData]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -98,6 +160,29 @@ export default function PaymentPage() {
 
   return (
     <main className="max-w-4xl mx-auto py-12 px-4">
+      {/* Notification Popup - Muncul ketika pembayaran dari HP berhasil */}
+      {showNotification && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md mx-4 animate-slide-up">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Pembayaran Berhasil! 🎉</h2>
+              <p className="text-gray-600 mb-4">
+                Pembayaran telah dikonfirmasi dari perangkat mobile Anda
+              </p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-sky-50 rounded-lg">
+                <div className="w-2 h-2 bg-sky-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-sky-700">Mengalihkan ke halaman konfirmasi...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-3xl font-semibold text-sky-800 mb-2">Selesaikan Pembayaran</h1>
         <p className="text-sky-600">Order ID: <span className="font-mono">{orderId}</span></p>
@@ -180,21 +265,19 @@ export default function PaymentPage() {
               <h2 className="text-lg font-semibold text-sky-800 mb-4">Scan QRIS</h2>
               <div className="flex flex-col items-center">
                 <div className="p-4 bg-white rounded-lg border-2 border-sky-200 shadow-md mb-4">
-                  {/* Generate scannable QR Code */}
-                  <QRCodeSVG
-                    value={`seasnacky://payment?orderId=${orderId}&amount=${orderData.total}&merchant=SeaSnacky&timestamp=${Date.now()}`}
-                    size={256}
-                    level="H"
-                    includeMargin={true}
-                    imageSettings={{
-                      src: "/logo.png",
-                      x: undefined,
-                      y: undefined,
-                      height: 40,
-                      width: 40,
-                      excavate: true,
-                    }}
-                  />
+                  {/* QR Code yang membuka halaman konfirmasi di browser */}
+                  {paymentUrl ? (
+                    <QRCodeSVG
+                      value={paymentUrl}
+                      size={256}
+                      level="H"
+                      includeMargin={true}
+                    />
+                  ) : (
+                    <div className="w-64 h-64 flex items-center justify-center bg-gray-100 rounded">
+                      <p className="text-gray-500">Loading QR...</p>
+                    </div>
+                  )}
                 </div>
                 <div className="text-center mb-4">
                   <p className="text-sm font-semibold text-sky-800">Total Pembayaran</p>
@@ -203,19 +286,15 @@ export default function PaymentPage() {
                 </div>
                 <div className="w-full space-y-3">
                   <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                    <p className="text-sm text-blue-800 font-medium mb-2">📱 Cara Pembayaran:</p>
+                    <p className="text-sm text-blue-800 font-medium mb-2">📱 Cara Pembayaran QRIS:</p>
                     <ol className="text-xs text-blue-700 space-y-1">
-                      <li>1. Buka aplikasi e-wallet (GoPay, OVO, Dana, ShopeePay, dll)</li>
-                      <li>2. Pilih menu <strong>Scan QR</strong> atau <strong>Bayar</strong></li>
-                      <li>3. Arahkan kamera ke QR Code di atas</li>
-                      <li>4. Periksa nominal dan konfirmasi pembayaran</li>
-                      <li>5. Klik tombol "Saya Sudah Bayar" setelah selesai</li>
+                      <li>1. Buka aplikasi <strong>GoPay, OVO, Dana, ShopeePay,</strong> atau e-wallet lainnya</li>
+                      <li>2. Pilih menu <strong>"Scan QR"</strong> atau <strong>"Bayar"</strong></li>
+                      <li>3. Arahkan kamera ke <strong>QR Code</strong> di atas</li>
+                      <li>4. Periksa detail pembayaran dan nominal</li>
+                      <li>5. Masukkan <strong>PIN</strong> dan konfirmasi pembayaran</li>
+                      <li>6. Simpan bukti pembayaran yang muncul</li>
                     </ol>
-                  </div>
-                  <div className="bg-yellow-50 rounded p-3 border border-yellow-200">
-                    <p className="text-xs text-yellow-800">
-                      <strong>⚠️ Note Demo:</strong> QR Code ini hanya untuk demo. Dalam production akan terhubung ke payment gateway (Midtrans/Xendit) untuk pembayaran real.
-                    </p>
                   </div>
                 </div>
               </div>
@@ -259,19 +338,18 @@ export default function PaymentPage() {
             </div>
           )}
 
-          {/* Demo: Simulate Payment Button */}
-          <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-            <p className="text-sm text-green-700 mb-3">
-              <strong>Mode Demo:</strong> Klik tombol di bawah untuk {paymentMethod === "qris" ? "simulasi pembayaran berhasil" : "konfirmasi pesanan COD"}
-            </p>
-            <button
-              onClick={handlePaymentComplete}
-              disabled={loading}
-              className="w-full bg-green-600 text-white rounded-lg px-6 py-3 font-medium hover:bg-green-700 transition-colors disabled:opacity-60"
-            >
-              {loading ? "Memproses..." : paymentMethod === "qris" ? "✓ Saya Sudah Bayar" : "✓ Konfirmasi Pesanan COD"}
-            </button>
-          </div>
+          {/* COD Confirmation Button - Only show for COD */}
+          {paymentMethod === "cod" && (
+            <div className="rounded-lg border border-sky-100 bg-white p-4">
+              <button
+                onClick={handlePaymentComplete}
+                disabled={loading}
+                className="w-full bg-sky-600 text-white rounded-lg px-6 py-3 font-medium hover:bg-sky-700 transition-colors disabled:opacity-60"
+              >
+                {loading ? "Memproses..." : "✓ Konfirmasi Pesanan COD"}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Order Summary */}
