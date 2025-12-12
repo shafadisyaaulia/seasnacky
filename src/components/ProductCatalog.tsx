@@ -100,8 +100,8 @@ export default function ProductCatalog() {
           {/* Bagian Gambar */}
           <div className="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-t-xl bg-gray-200 lg:aspect-none lg:h-64 relative">
             <Image
-              // Logika Gambar: Cek image utama -> Cek array images -> Fallback placeholder
-              src={product.image || (product.images && product.images[0]) || "/placeholder-300.png"}
+              // Logika Gambar: Cek array images -> Fallback placeholder
+              src={(product.images && product.images[0]) || "/placeholder-300.png"}
               alt={product.name}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"

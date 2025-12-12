@@ -12,7 +12,7 @@ type Product = {
   slug: string;
   price: number;
   unit?: string;
-  image?: string;
+  images?: string[];
   rating?: number;
   reviewsCount?: number;
   description?: string;
@@ -108,7 +108,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <Link href={`/marketplace/${product.slug}`} className="block">
           <div className="w-full h-44 bg-gray-100 overflow-hidden relative img-zoom">
             <Image
-              src={product.image ?? "/placeholder-300.png"}
+              src={product.images && product.images[0] || "/placeholder-300.png"}
               alt={`Gambar ${product.name}`}
               fill
               sizes="(max-width: 640px) 100vw, 33vw"

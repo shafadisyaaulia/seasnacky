@@ -15,7 +15,7 @@ interface Product {
     price: number;
     stock: number;
     category: string;
-    image: string;
+    images: string[];
     createdAt: string;
 }
 
@@ -25,7 +25,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 // --- FUNGSI AMBIL USER ID (OTORISASI) ---
 async function getSellerData(): Promise<{ userId: string; username: string; shopName: string } | null> {
     
-    const requestHeaders = headers(); 
+    const requestHeaders = await headers(); 
     
     // [PERBAIKAN] Langsung ambil nilai header
     const cookieHeader = requestHeaders.get('cookie'); 

@@ -171,7 +171,8 @@ export default function CheckoutPage() {
           productId: it.productId,
           name: products[it.productId]?.name,
           quantity: it.quantity,
-          price: products[it.productId]?.price
+          price: products[it.productId]?.price,
+          images: products[it.productId]?.images
         })),
         isDirect
       }));
@@ -264,8 +265,8 @@ export default function CheckoutPage() {
                 return (
                   <div key={it.productId} className="flex items-center gap-3 mb-3">
                     <div className="w-14 h-14 bg-sky-50 rounded overflow-hidden flex items-center justify-center">
-                      {p?.image ? (
-                        <Image src={p.image} alt={p.name} width={56} height={56} className="object-cover" />
+                      {p?.images && p.images[0] ? (
+                        <Image src={p.images[0]} alt={p.name} width={56} height={56} className="object-cover" />
                       ) : (
                         <div className="text-sky-300 text-xs">No image</div>
                       )}

@@ -105,7 +105,7 @@ export default async function StorePage({ params }: Props) {
                 product={{
                     ...p.toObject(),
                     id: p._id.toString(), // Pastikan ID dikirim sebagai string
-                    image: p.image || p.images?.[0] || '/placeholder-300.png'
+                    images: p.images || []
                 }} 
               />
             ))

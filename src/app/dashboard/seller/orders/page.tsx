@@ -1,24 +1,49 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ShoppingBag, Truck, CheckCircle, Clock, Loader2, RefreshCw, X } from "lucide-react";
+import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
 
 export default function SellerOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const previousOrderCount = useRef(0);
   
   // State Modal & Resi
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [resiInput, setResiInput] = useState(""); // <--- Input Resi
 
+  // Request notification permission on mount
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/orders/seller");
+      const res = await fetch("/api/orders");
       const data = await res.json();
-      if (Array.isArray(data)) setOrders(data);
+      if (data.data && Array.isArray(data.data)) {
+        const newOrders = data.data;
+        
+        // Check for new orders
+        if (previousOrderCount.current > 0 && newOrders.length > previousOrderCount.current) {
+          const latestOrder = newOrders[0];
+          notifyNewOrder(
+            latestOrder._id,
+            latestOrder.buyerName,
+            latestOrder.totalAmount
+          );
+        }
+        
+        previousOrderCount.current = newOrders.length;
+        setOrders(newOrders);
+      } else if (Array.isArray(data)) {
+        setOrders(data);
+        previousOrderCount.current = data.length;
+      }
     } catch (error) {
       console.error("Gagal ambil data pesanan", error);
     } finally {
@@ -28,6 +53,11 @@ export default function SellerOrdersPage() {
 
   useEffect(() => {
     fetchOrders();
+    
+    // Poll for new orders every 10 seconds
+    const interval = setInterval(fetchOrders, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Fungsi Update Status
@@ -83,6 +113,10 @@ export default function SellerOrdersPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Pesanan Masuk</h1>
           <p className="text-gray-500 text-sm">Kelola pesanan dan update resi pengiriman.</p>
+          <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+            <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
+            Auto-refresh setiap 10 detik
+          </p>
         </div>
       </div>
 
@@ -182,7 +216,7 @@ export default function SellerOrdersPage() {
                 {selectedOrder.items.map((item: any, idx: number) => (
                   <div key={idx} className="flex gap-4 items-center">
                     <div className="w-12 h-12 bg-gray-100 rounded border overflow-hidden">
-                       {item.productId?.image && <img src={item.productId.image} className="w-full h-full object-cover" />}
+                       {item.productId?.images && item.productId.images[0] && <img src={item.productId.images[0]} className="w-full h-full object-cover" />}
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-gray-800 text-sm">{item.productName}</p>

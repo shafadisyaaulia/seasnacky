@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Edit, Trash2, DollarSign, Package, Tag, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast'; 
 import { useRouter } from 'next/navigation';
@@ -12,7 +13,7 @@ interface Product {
     price: number;
     stock: number;
     category: string;
-    image: string;
+    images: string[];
     createdAt: string;
 }
 
@@ -57,12 +58,20 @@ export default function ProductActionRow({ product, BASE_URL }: { product: Produ
             {/* Kolom Produk */}
             <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10">
-                        <img 
-                            className="h-10 w-10 rounded-lg object-cover border" 
-                            src={product.image || `${BASE_URL}/default-product.png`} 
-                            alt={product.name} 
-                        />
+                    <div className="flex-shrink-0 h-10 w-10 relative bg-gray-100 rounded-lg border">
+                        {product.images && product.images.length > 0 ? (
+                            <Image 
+                                className="rounded-lg object-cover" 
+                                src={product.images[0]} 
+                                alt={product.name}
+                                fill
+                                sizes="40px"
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center h-full w-full text-gray-400 text-xs">
+                                No Image
+                            </div>
+                        )}
                     </div>
                     <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{product.name}</div>
@@ -92,7 +101,7 @@ export default function ProductActionRow({ product, BASE_URL }: { product: Produ
             {/* Kolom Aksi (Client-side interactivity) */}
             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <Link 
-                    href={`/dashboard/seller/products/edit/${product.id}`} 
+                    href={`/dashboard/seller/products/${product.id}/edit`} 
                     className="text-indigo-600 hover:text-indigo-900 mr-4 inline-flex items-center"
                 >
                     <Edit size={16} className="mr-1" /> Edit

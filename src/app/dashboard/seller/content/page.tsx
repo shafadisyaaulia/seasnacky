@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CldUploadWidget } from "next-cloudinary";
-import { ImagePlus, X, Loader2, Save } from "lucide-react";
+import { ImagePlus, X, Loader2, Save, ChefHat, Trash2, Clock } from "lucide-react";
 
 export default function CreateRecipePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [sellerProducts, setSellerProducts] = useState<any[]>([]);
+  const [myRecipes, setMyRecipes] = useState<any[]>([]);
 
   // State awal dipisah biar gampang di-reset
   const initialFormState = {
@@ -24,7 +25,7 @@ export default function CreateRecipePage() {
   
   const [form, setForm] = useState(initialFormState);
 
-  // 1. Ambil Daftar Produk Seller
+  // 1. Ambil Daftar Produk Seller & Resep yang sudah dibuat
   useEffect(() => {
     const fetchMyProducts = async () => {
       try {
@@ -38,7 +39,21 @@ export default function CreateRecipePage() {
         console.error("Gagal ambil produk", error);
       }
     };
+
+    const fetchMyRecipes = async () => {
+      try {
+        const res = await fetch("/api/recipes?t=" + Date.now());
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setMyRecipes(data);
+        }
+      } catch (error) {
+        console.error("Gagal ambil resep", error);
+      }
+    };
+
     fetchMyProducts();
+    fetchMyRecipes();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,22 +86,68 @@ export default function CreateRecipePage() {
       // ✅ RESET FORM SEKARANG
       setForm(initialFormState); 
 
-      // ✅ REFRESH DAN PINDAH HALAMAN
-      router.refresh(); 
-      router.push("/dashboard/seller/content"); 
+      // ✅ Refresh list resep
+      const recipesRes = await fetch("/api/recipes?t=" + Date.now());
+      const data = await recipesRes.json();
+      if (Array.isArray(data)) {
+        setMyRecipes(data);
+      }
 
-      // Note: Kita biarkan isLoading true sampai halaman berpindah
-      // supaya user tidak bisa klik tombol lagi.
+      setIsLoading(false);
 
+    }
+  };
+
+  const handleDeleteRecipe = async (recipeId: string) => {
+    if (!confirm("Yakin ingin menghapus resep ini?")) return;
+
+    try {
+      const res = await fetch(`/api/recipes/${recipeId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal menghapus resep");
+      
+      alert("Resep berhasil dihapus!");
+      setMyRecipes(myRecipes.filter(r => r._id !== recipeId));
     } catch (error: any) {
       alert("Error: " + error.message);
-      setIsLoading(false); // Nyalakan tombol lagi kalau error
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-20">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Tulis Resep Baru</h1>
+    <div className="max-w-6xl mx-auto pb-20">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Konten Resep Saya</h1>
+      </div>
+
+      {/* List Resep yang Sudah Dibuat */}
+      {myRecipes.length > 0 && (
+        <div className="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <ChefHat size={24} className="text-blue-600" />
+            Resep yang Sudah Diterbitkan ({myRecipes.length})
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {myRecipes.map((recipe) => (
+              <div key={recipe._id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                <img src={recipe.image} alt={recipe.title} className="w-full h-40 object-cover" />
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-800 mb-1">{recipe.title}</h3>
+                  <p className="text-sm text-gray-600 flex items-center gap-1 mb-2">
+                    <Clock size={14} /> {recipe.time}
+                  </p>
+                  <button
+                    onClick={() => handleDeleteRecipe(recipe._id)}
+                    className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={16} /> Hapus
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <h2 className="text-xl font-bold mb-4 text-gray-800">Tulis Resep Baru</h2>
 
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 space-y-8">
         

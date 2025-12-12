@@ -359,7 +359,17 @@ export default function PaymentPage() {
             <div className="space-y-3 mb-4">
               {orderData.items.map((item: any) => (
                 <div key={item.productId} className="flex items-center gap-3 text-sm">
-                  <div className="w-10 h-10 bg-sky-50 rounded flex-shrink-0"></div>
+                  <div className="w-10 h-10 bg-sky-50 rounded flex-shrink-0 relative overflow-hidden">
+                    {item.image || (item.images && item.images[0]) ? (
+                      <Image
+                        src={item.image || item.images[0]}
+                        alt={item.name}
+                        fill
+                        sizes="40px"
+                        className="object-cover"
+                      />
+                    ) : null}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sky-800 font-medium truncate">{item.name}</p>
                     <p className="text-sky-600 text-xs">{item.quantity}x Rp {item.price?.toLocaleString("id-ID")}</p>

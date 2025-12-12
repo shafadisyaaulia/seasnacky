@@ -46,13 +46,19 @@ export default function PaymentSuccessPage() {
         {/* Action Buttons */}
         <div className="space-y-3">
           <Link 
-            href={`/user/orders/${orderId}`}
+            href="/user/orders"
             className="block w-full bg-sky-600 text-white rounded-lg px-6 py-3 font-medium hover:bg-sky-700 transition-colors"
           >
-            Lihat Detail Pesanan
+            Lihat Semua Pesanan Saya
           </Link>
           <Link 
-            href="/products"
+            href={`/user/orders/${orderId}`}
+            className="block w-full border border-sky-600 text-sky-700 rounded-lg px-6 py-3 font-medium hover:bg-sky-50 transition-colors"
+          >
+            Detail Pesanan Ini
+          </Link>
+          <Link 
+            href="/marketplace"
             className="block w-full border border-sky-300 text-sky-700 rounded-lg px-6 py-3 font-medium hover:bg-sky-50 transition-colors"
           >
             Lanjut Belanja
@@ -75,9 +81,9 @@ export default function PaymentSuccessPage() {
         <h3 className="font-semibold text-blue-800 mb-3">💡 Informasi Penting</h3>
         <ul className="text-sm text-blue-700 space-y-2">
           <li>• Pesanan akan dikirim dalam 1-3 hari kerja</li>
-          <li>• Cek email untuk invoice dan nomor resi</li>
-          <li>• Lacak pesanan di halaman "Pesanan Saya"</li>
-          <li>• Hubungi seller jika ada pertanyaan</li>
+          <li>• Lacak pesanan di halaman <Link href="/user/orders" className="underline font-semibold">"Pesanan Saya"</Link></li>
+          <li>• Nomor resi akan muncul setelah seller mengirim pesanan</li>
+          <li>• Status pesanan akan diperbarui secara otomatis</li>
         </ul>
       </div>
     </main>

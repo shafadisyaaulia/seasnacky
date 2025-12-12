@@ -16,19 +16,13 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = user.sub;
-    const sellerId = request.nextUrl.searchParams.get("sellerId");
+    const buyerName = user.name;
     
-    let query: any = {};
-    
-    // If sellerId is provided in params, filter by sellerId
-    // Otherwise, filter by current user as seller
-    if (sellerId) {
-      query.sellerId = sellerId;
-    } else {
-      query.sellerId = userId;
-    }
-
-    const orders = await Order.find(query)
+    // Find orders by buyer name (since we don't have buyerId field)
+    // You might want to add a buyerId field to Order model for better querying
+    const orders = await Order.find({ 
+      buyerName: buyerName 
+    })
       .populate('items.productId')
       .sort({ createdAt: -1 });
 
@@ -39,18 +33,10 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error("Error fetching orders:", error);
+    console.error("Error fetching buyer orders:", error);
     return NextResponse.json({ 
       error: "Failed to fetch orders",
       message: error.message 
     }, { status: 500 });
   }
-}
-
-// Tambahkan handler POST biar lengkap (jika user checkout)
-export async function POST(request: NextRequest) {
-    return NextResponse.json({ 
-        message: "Order berhasil dibuat (Dummy)",
-        orderId: "ORD-DUMMY-123"
-    }, { status: 201 });
 }

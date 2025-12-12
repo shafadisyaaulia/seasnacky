@@ -47,21 +47,22 @@ export async function PATCH(
     await connectDB();
     const user = await getAuthUser();
     
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user || !user.sub) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
     const body = await request.json();
     const { status, trackingNumber } = body; // <--- Ambil Tracking Number
 
-    const validStatuses = ["pending", "process", "shipped", "completed", "cancelled"];
+    const validStatuses = ["pending", "paid", "process", "shipped", "completed", "cancelled"];
     if (!validStatuses.includes(status)) {
         return NextResponse.json({ error: "Status tidak valid" }, { status: 400 });
     }
 
-    const order = await Order.findOne({ _id: id, sellerId: user._id });
+    const userId = user.sub;
+    const order = await Order.findOne({ _id: id, sellerId: userId });
 
     if (!order) {
-      return NextResponse.json({ error: "Pesanan tidak ditemukan" }, { status: 404 });
+      return NextResponse.json({ error: "Pesanan tidak ditemukan atau Anda bukan pemilik toko" }, { status: 404 });
     }
 
     // Update status
@@ -72,11 +73,13 @@ export async function PATCH(
         order.trackingNumber = trackingNumber;
     }
 
+    order.updatedAt = new Date();
     await order.save();
 
     return NextResponse.json({ message: "Update berhasil", order });
 
   } catch (error: any) {
+    console.error("Error updating order:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

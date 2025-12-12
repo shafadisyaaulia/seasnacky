@@ -138,6 +138,18 @@ export default function Header() {
                         </Link>
                       </li>
 
+                      {/* 1.5. Pesanan Saya (Untuk semua user) */}
+                      <li>
+                        <Link
+                          href="/user/orders"
+                          onClick={() => setOpen(false)}
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+                        >
+                          <ShoppingCart size={16} className="text-slate-400" />
+                          Pesanan Saya
+                        </Link>
+                      </li>
+
                       {/* 2. Link ke TOKO (Logika IF-ELSE) */}
                       <li>
                         {user.role === "SELLER" || user.role === "seller" ? (

@@ -57,7 +57,7 @@ export default async function ProductDetailPage({
           <div className="relative aspect-square overflow-hidden rounded-2xl bg-white shadow-sm border border-gray-100">
              {/* Gunakan gambar dari DB atau placeholder */}
              <Image
-                src={product.image || "/placeholder-product.png"}
+                src={product.images && product.images[0] || "/placeholder-product.png"}
                 alt={product.name}
                 fill
                 className="object-cover object-center"

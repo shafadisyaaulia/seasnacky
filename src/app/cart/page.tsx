@@ -9,7 +9,7 @@ type Product = {
   id: string;
   name: string;
   price: number;
-  image?: string;
+  images?: string[];
   unit?: string;
 };
 
@@ -34,7 +34,7 @@ export default function CartPage() {
         if (!mounted) return;
         const map: Record<string, Product> = {};
         (list ?? []).forEach((p: any) => {
-          map[p.id] = { id: p.id, name: p.name, price: p.price, image: p.image, unit: p.unit };
+          map[p.id] = { id: p.id, name: p.name, price: p.price, images: p.images, unit: p.unit };
         });
         setProducts(map);
       } catch (err) {
@@ -79,8 +79,8 @@ export default function CartPage() {
               return (
                 <article key={it.productId} className="rounded-lg border border-sky-50 bg-white p-4 shadow-sm flex gap-4 items-center">
                   <div className="w-28 h-28 bg-sky-50 rounded-md overflow-hidden flex items-center justify-center">
-                    {p?.image ? (
-                      <Image src={p.image} alt={p.name} width={96} height={96} className="object-cover" />
+                    {p?.images && p.images[0] ? (
+                      <Image src={p.images[0]} alt={p.name} width={96} height={96} className="object-cover" />
                     ) : (
                       <div className="text-sky-300 text-sm">No image</div>
                     )}
