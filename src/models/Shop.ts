@@ -1,16 +1,49 @@
-import mongoose from "mongoose";
+// File: src/models/Shop.ts
+
+import mongoose, { Schema } from "mongoose";
 
 const ShopSchema = new mongoose.Schema({
-  owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
-  name: { type: String, required: true },
-  description: { type: String },
-  address: { type: String, required: true },
-  image: { type: String },
-  balance: { type: Number, default: 0 },
-  createdAt: { type: Date, default: Date.now },
+    // Nama Toko (Wajib)
+    name: { 
+        type: String, 
+        required: [true, "Nama toko wajib diisi"], 
+        trim: true 
+    },
+    
+    // Deskripsi Toko (Opsional)
+    description: { 
+        type: String, 
+        default: "" 
+    },
+    
+    // Alamat Toko (Wajib)
+    address: { 
+        type: String, 
+        required: [true, "Alamat toko wajib diisi"] 
+    },
+
+    // ID Seller: Menautkan Toko ini ke User Seller tertentu (Wajib)
+    sellerId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+        unique: true, // Satu seller hanya boleh punya satu toko
+        index: true
+    },
+    
+    // Status Persetujuan Admin (Default: PENDING)
+    status: {
+        type: String,
+        enum: ['active', 'pending', 'suspended'],
+        default: 'pending', // KRITIS: Menunggu persetujuan Admin
+    },
+    
+    createdAt: { 
+        type: Date, 
+        default: Date.now 
+    },
 });
 
-// PERBAIKAN DISINI:
 const Shop = mongoose.models.Shop || mongoose.model("Shop", ShopSchema);
 
 export default Shop;
