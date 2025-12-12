@@ -22,12 +22,15 @@ export async function POST(request: NextRequest) {
         
         // 2. Cek User
         const user = await User.findById(userId);
+        console.log("[API/upgrade-and-create] userId diterima:", userId);
+        console.log("[API/upgrade-and-create] user ditemukan:", user);
         if (!user) {
             return NextResponse.json({ error: "User tidak ditemukan." }, { status: 404 });
         }
         
         // Cek duplikasi: Jika user sudah punya shopId (berarti sudah mendaftar)
         if (user.shopId) {
+            console.log("[API/upgrade-and-create] User sudah punya shopId:", user.shopId);
             return NextResponse.json({ error: "Anda sudah mendaftar toko dan sedang menunggu persetujuan." }, { status: 409 });
         }
 

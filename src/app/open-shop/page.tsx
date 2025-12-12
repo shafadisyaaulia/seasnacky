@@ -86,6 +86,8 @@ export default function OpenShopPage() {
 
         try {
             const payload = { ...formData, userId: userId };
+            // Debug log userId dan payload
+            console.log("[OpenShop] Submit payload:", payload);
 
             // Panggil API upgrade-and-create
             const res = await fetch("/api/shop/upgrade-and-create", { 
@@ -108,29 +110,12 @@ export default function OpenShopPage() {
             // Redirect ke Dashboard Buyer/Utama (karena role belum berubah)
             setTimeout(() => {
                 window.location.href = "/dashboard"; 
-            }, 2500); // Tunggu 2.5 detik
-
-        } catch (error: any) {
-            console.error("Submit Toko Error:", error);
-            // Menampilkan error di form box jika ada (opsional)
-            if (error.message) { 
-                 setErrorMessage(error.message);
-            }
+            }, 1500);
+        } catch (err: any) {
+            setErrorMessage(err.message);
         } finally {
             setIsLoading(false);
         }
-    };
-
-    // --- JSX RENDER ---
-
-    if (isCheckingUser) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="flex items-center gap-2 text-blue-600 font-semibold">
-                    <Loader2 className="animate-spin" /> Memuat data akun...
-                </div>
-            </div>
-        );
     }
     
     // Jika userId null setelah checking, seharusnya sudah di-redirect di useEffect.

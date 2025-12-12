@@ -56,13 +56,13 @@ export async function middleware(request: NextRequest) {
     const isAuthenticated = !!userPayload;
 
     // 1. Proteksi Halaman Login/Register (Jika sudah login, redirect ke /dashboard)
-    if ((path.startsWith("/login") || path.startsWith("/register")) && isAuthenticated) {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+    if ((path.startsWith("/auth/login") || path.startsWith("/auth/regis")) && isAuthenticated) {
+        return NextResponse.redirect(new URL("/", request.url));
     }
     
     // 2. Proteksi Halaman Dashboard Umum & Open Shop (Membutuhkan login)
     if (isAuthRoute && !isAuthenticated) {
-        url.pathname = '/login';
+        url.pathname = '/auth/login';
         url.searchParams.set('redirect', path);
         return NextResponse.redirect(url);
     }

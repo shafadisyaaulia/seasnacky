@@ -4,7 +4,7 @@ import { SignJWT, jwtVerify } from "jose";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 
-const secretKey = process.env.JWT_SECRET || "rahasia-negara-seasnacky";
+const secretKey = process.env.JWT_SECRET || "s";
 const encodedKey = new TextEncoder().encode(secretKey);
 const COOKIE_NAME = "seasnacky_session";
 
