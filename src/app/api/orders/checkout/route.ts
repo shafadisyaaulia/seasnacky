@@ -23,56 +23,79 @@ export async function POST(request: NextRequest) {
     const userId = user.sub;
     const buyerName = payload.customerName || user.name || "User";
 
-    // Normalisasi Data:
-    // Tombol "Beli Sekarang" di Resep mengirim: { productId, quantity }
-    // Cart/Mock lama mungkin mengirim format lain. Kita fokus ke yang Resep dulu.
-    let targetProductId = payload.productId;
-    let targetQty = payload.quantity || 1;
+    // Get items from payload
+    let orderItems = [];
+    let totalAmount = 0;
+    let sellerId;
 
-    // Jika formatnya items array (dari cart), ambil item pertama (MVP)
     if (payload.items && payload.items.length > 0) {
-       targetProductId = payload.items[0].productId;
-       targetQty = payload.items[0].quantity || 1;
+      // Multiple items dari cart
+      for (const item of payload.items) {
+        const product = await Product.findById(item.productId);
+        if (!product) continue;
+        
+        // Get sellerId dari product pertama
+        if (!sellerId) {
+          if (product.sellerId) {
+            sellerId = product.sellerId;
+          } else if (product.shop) {
+            const shop = await Shop.findById(product.shop);
+            if (shop?.owner) sellerId = shop.owner;
+          }
+        }
+        
+        orderItems.push({
+          productId: product._id,
+          productName: product.name,
+          quantity: item.quantity,
+          price: product.price
+        });
+        
+        totalAmount += product.price * item.quantity;
+      }
+    } else if (payload.productId) {
+      // Single product dari "Beli Sekarang"
+      const product = await Product.findById(payload.productId);
+      if (!product) {
+        return NextResponse.json({ message: "Produk tidak ditemukan" }, { status: 404 });
+      }
+      
+      if (product.sellerId) {
+        sellerId = product.sellerId;
+      } else if (product.shop) {
+        const shop = await Shop.findById(product.shop);
+        if (shop?.owner) sellerId = shop.owner;
+      }
+      
+      const qty = payload.quantity || 1;
+      orderItems.push({
+        productId: product._id,
+        productName: product.name,
+        quantity: qty,
+        price: product.price
+      });
+      
+      totalAmount = product.price * qty;
     }
 
-    if (!targetProductId) {
-       return NextResponse.json({ message: "Data produk tidak valid" }, { status: 400 });
+    if (orderItems.length === 0) {
+      return NextResponse.json({ message: "Tidak ada item untuk checkout" }, { status: 400 });
     }
-
-    // 2. Cari Produk di MongoDB
-    const product = await Product.findById(targetProductId);
-    if (!product) {
-      return NextResponse.json({ message: "Produk tidak ditemukan di Database" }, { status: 404 });
+    
+    // Fallback sellerId jika tidak ada
+    if (!sellerId) {
+      console.warn("⚠️ Product tidak punya sellerId/shop, menggunakan buyer sebagai seller (demo mode)");
+      sellerId = userId;
     }
-
-    // 3. Cari Toko Penjual (Seller)
-    // Produk harus punya field 'shop' yang berisi ID Toko
-    if (!product.shop) {
-       return NextResponse.json({ message: "Produk ini tidak memiliki data toko (Data Lama/Rusak)" }, { status: 400 });
-    }
-
-    const shop = await Shop.findById(product.shop);
-    if (!shop) {
-       return NextResponse.json({ message: "Toko penjual tidak ditemukan" }, { status: 404 });
-    }
-
-    const sellerId = shop.owner; // ID User Penjual
 
     // 4. SIMPAN KE MONGODB (Collection 'orders')
     const newOrder = await Order.create({
-      sellerId: sellerId,        // Masuk ke dashboard seller ini
-      buyerName: buyerName,      // Nama Pembeli
+      sellerId: sellerId,
+      buyerName: buyerName,
       recipientName: buyerName,
       shippingAddress: payload.shippingAddress || "",
-      items: [
-        {
-          productId: product._id,
-          productName: product.name,
-          quantity: targetQty,
-          price: product.price
-        }
-      ],
-      totalAmount: product.price * targetQty,
+      items: orderItems,
+      totalAmount: totalAmount,
       status: "pending",
       createdAt: new Date()
     });
