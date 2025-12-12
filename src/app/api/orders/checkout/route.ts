@@ -88,6 +88,16 @@ export async function POST(request: NextRequest) {
       sellerId = userId;
     }
 
+    // Get shipping cost from payload
+    const shippingCost = payload.shippingCost || 0;
+    const finalTotal = totalAmount + shippingCost;
+
+    console.log("💰 Order Summary:", {
+      subtotal: totalAmount,
+      shippingCost: shippingCost,
+      finalTotal: finalTotal
+    });
+
     // 4. SIMPAN KE MONGODB (Collection 'orders')
     const newOrder = await Order.create({
       sellerId: sellerId,
@@ -95,12 +105,19 @@ export async function POST(request: NextRequest) {
       recipientName: buyerName,
       shippingAddress: payload.shippingAddress || "",
       items: orderItems,
-      totalAmount: totalAmount,
+      shippingCost: shippingCost,
+      totalAmount: finalTotal,
       status: "pending",
       createdAt: new Date()
     });
 
     console.log("🎉 Order Real Berhasil:", newOrder._id);
+    console.log("📦 Saved Order:", {
+      id: newOrder._id,
+      totalAmount: newOrder.totalAmount,
+      shippingCost: newOrder.shippingCost,
+      itemsTotal: totalAmount
+    });
 
     return NextResponse.json({
       id: newOrder._id.toString(),

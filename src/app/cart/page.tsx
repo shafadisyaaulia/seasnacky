@@ -14,15 +14,19 @@ type Product = {
 };
 
 export default function CartPage() {
-  const { items, updateItem, removeItem, clear } = useCart();
+  const cart = useCart();
+  const { items, updateItem, removeItem, clear } = cart;
   const [products, setProducts] = useState<Record<string, Product>>({});
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
+  
+  console.log("🛒 Cart Page - cart context:", cart);
+  console.log("🛒 Cart Page - items:", items);
+  
   useEffect(() => {
     let mounted = true;
    async function loadAll() {
       try {
-        // Gunakan URL LENGKAP
-        const res = await fetch(`${BASE_URL}/api/products`); // <--- PERBAIKAN DI SINI!
+        // Gunakan relative URL untuk menghindari CORS
+        const res = await fetch("/api/products");
         if (!res.ok) return;
         const data = await res.json();
         // data may be { data: [...] } or list
@@ -59,7 +63,7 @@ export default function CartPage() {
               <div className="text-sm text-sky-700 font-medium">{items.length} item dalam keranjang</div>
               <div className="flex items-center gap-3">
                 <button onClick={() => clear()} className="text-sm text-red-600 border border-red-100 px-3 py-1 rounded">Kosongkan Keranjang</button>
-                <Link href="/marketplace" className="text-sm text-sky-700 underline">Lanjut Belanja</Link>
+                <Link href="/products" className="text-sm text-sky-700 underline">Lanjut Belanja</Link>
               </div>
             </div>
           </div>

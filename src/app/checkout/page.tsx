@@ -135,6 +135,7 @@ export default function CheckoutPage() {
         customerPhone: phone,
         items: items.map((it: any) => ({ productId: it.productId, quantity: it.quantity })),
         shippingAddress: `${address}, ${selectedCity?.name}, ${selectedProvince?.name}`,
+        shippingCost: shippingCost,
       };
       
       console.log("Sending checkout request:", payload);

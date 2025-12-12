@@ -23,9 +23,10 @@ export default function OrderDetailPage() {
         console.log("Response status:", res.status);
         
         if (res.ok) {
-          const data = await res.json();
-          console.log("Order data received:", data);
-          setOrder(data);
+          const response = await res.json();
+          console.log("API response:", response);
+          console.log("Order data:", response.data);
+          setOrder(response.data || response); // API returns { data: order }
         } else {
           const errorData = await res.json();
           console.error("Order not found:", errorData);
@@ -176,11 +177,11 @@ export default function OrderDetailPage() {
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-sky-600">Subtotal</span>
-                <span className="text-sky-900">Rp {(order.totalAmount || 0).toLocaleString("id-ID")}</span>
+                <span className="text-sky-900">Rp {((order.totalAmount || 0) - (order.shippingCost || 0)).toLocaleString("id-ID")}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-sky-600">Ongkir</span>
-                <span className="text-sky-900">Rp 0</span>
+                <span className="text-sky-900">Rp {(order.shippingCost || 0).toLocaleString("id-ID")}</span>
               </div>
               <div className="border-t pt-3 flex justify-between">
                 <span className="font-semibold text-sky-800">Total</span>

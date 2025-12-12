@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, ShoppingCart, Filter, Loader2 } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 
 interface Product {
   _id: string;
@@ -18,6 +19,11 @@ export default function MarketplacePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [addingToCart, setAddingToCart] = useState<string | null>(null);
+  const cart = useCart();
+  
+  console.log("🔍 Products Page - cart context:", cart);
+  console.log("🔍 Products Page - addItem function:", cart?.addItem);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -90,14 +96,37 @@ export default function MarketplacePage() {
                     <div className="text-lg font-bold text-blue-600 mb-3">Rp {product.price.toLocaleString("id-ID")}</div>
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => {
-                          // Add to cart logic
-                          alert("Ditambahkan ke keranjang!");
+                        onClick={async (e) => {
+                          console.log("🔴 BUTTON CLICKED - Product:", product._id);
+                          e.preventDefault();
+                          e.stopPropagation();
+                          
+                          if (!cart?.addItem) {
+                            console.error("❌ Cart context tidak tersedia");
+                            alert("Gagal menambahkan ke keranjang");
+                            return;
+                          }
+                          
+                          setAddingToCart(product._id);
+                          try {
+                            console.log("🛒 Calling addItem...");
+                            await cart.addItem({ productId: product._id, quantity: 1 });
+                            console.log("✅ Item added successfully");
+                            alert("✓ Ditambahkan ke keranjang!");
+                          } catch (error) {
+                            console.error("❌ Error adding to cart:", error);
+                            alert("Gagal menambahkan ke keranjang");
+                          } finally {
+                            setAddingToCart(null);
+                          }
                         }}
-                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
+                        disabled={addingToCart === product._id}
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium disabled:opacity-50"
                       >
                         <ShoppingCart size={16} />
-                        <span className="hidden sm:inline">Keranjang</span>
+                        <span className="hidden sm:inline">
+                          {addingToCart === product._id ? "..." : "Keranjang"}
+                        </span>
                       </button>
                       <button 
                         onClick={() => {
@@ -111,7 +140,6 @@ export default function MarketplacePage() {
                         }}
                         className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                       >
-                        <ShoppingCart size={16} />
                         Beli Sekarang
                       </button>
                     </div>

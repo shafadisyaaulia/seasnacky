@@ -30,8 +30,13 @@ export default function ProductCard({ product }: { product: Product }) {
   const [loading, setLoading] = React.useState(false);
   const [added, setAdded] = React.useState(false);
   const [store, setStore] = React.useState<{ name: string; city: string } | null>(null);
-  const { addItem } = useCart();
+  const cart = useCart();
   const [toast, setToast] = React.useState<string | null>(null);
+  
+  console.log("🔍 ProductCard - cart context:", cart);
+  console.log("🔍 ProductCard - addItem function:", cart?.addItem);
+  
+  const { addItem } = cart || {};
 
   React.useEffect(() => {
     let mounted = true;
@@ -56,9 +61,17 @@ export default function ProductCard({ product }: { product: Product }) {
   async function addToCart() {
     setLoading(true);
     try {
-      console.log("Adding to cart:", { productId: product.id, quantity: 1 });
+      console.log("🛒 addToCart - Starting...");
+      console.log("🛒 addToCart - addItem function:", addItem);
+      console.log("🛒 addToCart - product:", { productId: product.id, quantity: 1 });
+      
+      if (!addItem) {
+        console.error("❌ addItem is not available!");
+        throw new Error("Cart context tidak tersedia");
+      }
+      
       await addItem({ productId: product.id, quantity: 1 });
-      console.log("Item added successfully");
+      console.log("✅ Item added successfully");
       setAdded(true);
       setToast("✓ Ditambahkan ke keranjang");
       setTimeout(() => {
@@ -144,8 +157,16 @@ export default function ProductCard({ product }: { product: Product }) {
 
         <div className="flex gap-2">
           <button
-            onClick={addToCart}
+            onClick={(e) => {
+              console.log("🔴 BUTTON CLICKED!", e);
+              console.log("🔴 Event target:", e.target);
+              console.log("🔴 Current target:", e.currentTarget);
+              e.preventDefault();
+              e.stopPropagation();
+              addToCart();
+            }}
             disabled={loading}
+            type="button"
             className={`flex-1 inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors border border-sky-600 text-sky-700 hover:bg-sky-50 disabled:opacity-60`}
             style={{ boxShadow: '0 1px 0 rgba(2,6,23,0.04)' }}
           >
@@ -156,7 +177,13 @@ export default function ProductCard({ product }: { product: Product }) {
           </button>
 
           <button
-            onClick={buyNow}
+            onClick={(e) => {
+              console.log("🟢 BUY NOW CLICKED!");
+              e.preventDefault();
+              e.stopPropagation();
+              buyNow();
+            }}
+            type="button"
             className="flex-1 inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors btn-primary btn-press"
             style={{ boxShadow: '0 1px 0 rgba(2,6,23,0.04)' }}
           >

@@ -31,14 +31,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Update order with payment info
-    order.status = status || "paid";
     order.paymentMethod = paymentMethod || "qris";
     order.paymentDate = new Date();
     order.updatedAt = new Date();
     
+    // COD: tetap pending/process (belum dibayar), dibayar saat terima barang
+    // QRIS: langsung paid karena sudah bayar online
+    if (paymentMethod === "cod") {
+      order.status = "process"; // Pesanan diproses, bayar saat terima
+    } else {
+      order.status = "paid"; // QRIS/online payment langsung paid
+    }
+    
     await order.save();
 
-    console.log("Order payment updated:", orderId, "Status:", order.status);
+    console.log("Order payment updated:", orderId, "Status:", order.status, "Method:", paymentMethod);
 
     return NextResponse.json({ 
       message: "Pembayaran berhasil diproses",
