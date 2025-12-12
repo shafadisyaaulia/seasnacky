@@ -1,3 +1,4 @@
+// seasnacky/src/app/dashboard/seller/page.tsx
 import { DollarSign, Package, ShoppingCart } from "lucide-react";
 
 export default function DashboardOverview() {
