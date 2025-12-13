@@ -58,7 +58,7 @@ export default function PaymentSuccessPage() {
             Detail Pesanan Ini
           </Link>
           <Link 
-            href="/marketplace"
+            href="/products"
             className="block w-full border border-sky-300 text-sky-700 rounded-lg px-6 py-3 font-medium hover:bg-sky-50 transition-colors"
           >
             Lanjut Belanja

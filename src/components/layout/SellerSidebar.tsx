@@ -26,12 +26,19 @@ export default function SellerSidebar() {
   };
 
   return (
-    // Class 'fixed' membuat dia diam di kiri, 'z-50' memastikannya di atas elemen lain
-    <aside className="w-64 bg-white border-r h-screen fixed left-0 top-0 flex flex-col z-50 shadow-lg">
+    // Fixed sidebar dengan z-40 (di bawah modal tapi di atas konten)
+    <aside className="w-64 bg-white border-r h-screen fixed left-0 top-0 flex flex-col z-40 shadow-lg">
       
       {/* Logo Area */}
-      <div className="p-6 border-b h-16 flex items-center">
-        <h1 className="text-2xl font-bold text-blue-600">Seasnacky<span className="text-gray-400 text-sm">.Seller</span></h1>
+      <div className="p-6 border-b flex items-center">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-500 text-sm font-bold text-white">
+            SS
+          </div>
+          <h1 className="text-xl font-bold text-blue-600">
+            Seasnacky<span className="text-gray-400 text-xs">.Seller</span>
+          </h1>
+        </Link>
       </div>
 
       {/* Menu Links */}

@@ -3,13 +3,19 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CldUploadWidget } from "next-cloudinary";
-import { ImagePlus, X, Loader2, Save, ChefHat, Trash2, Clock } from "lucide-react";
+import { ImagePlus, X, Loader2, Save, ChefHat, Trash2, Clock, Edit, XCircle } from "lucide-react";
+import { useNotification } from "@/context/NotificationContext";
 
 export default function CreateRecipePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { showNotification } = useNotification();
   const [sellerProducts, setSellerProducts] = useState<any[]>([]);
   const [myRecipes, setMyRecipes] = useState<any[]>([]);
+  const [editMode, setEditMode] = useState<{ isEditing: boolean; recipeId: string | null }>({
+    isEditing: false,
+    recipeId: null,
+  });
 
   // State awal dipisah biar gampang di-reset
   const initialFormState = {
@@ -58,7 +64,10 @@ export default function CreateRecipePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.image) return alert("Wajib upload foto hasil masakan!");
+    if (!form.image) {
+      showNotification("Foto Diperlukan", "Wajib upload foto hasil masakan!");
+      return;
+    }
     
     setIsLoading(true);
 
@@ -73,18 +82,34 @@ export default function CreateRecipePage() {
         instructions: instructionsArray,
       };
 
-      const res = await fetch("/api/recipes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      let res;
+      if (editMode.isEditing && editMode.recipeId) {
+        // UPDATE mode
+        res = await fetch(`/api/recipes/${editMode.recipeId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // CREATE mode
+        res = await fetch("/api/recipes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
 
       if (!res.ok) throw new Error("Gagal menyimpan resep");
 
-      alert("Resep berhasil diterbitkan! 👨‍🍳");
+      showNotification(
+        editMode.isEditing ? "Resep Diperbarui!" : "Resep Diterbitkan!",
+        editMode.isEditing ? "Perubahan berhasil disimpan! ✅" : "Resep berhasil diterbitkan! 👨‍🍳",
+        form.image
+      );
       
-      // ✅ RESET FORM SEKARANG
-      setForm(initialFormState); 
+      // ✅ RESET FORM & EDIT MODE
+      setForm(initialFormState);
+      setEditMode({ isEditing: false, recipeId: null });
 
       // ✅ Refresh list resep
       const recipesRes = await fetch("/api/recipes?t=" + Date.now());
@@ -95,7 +120,34 @@ export default function CreateRecipePage() {
 
       setIsLoading(false);
 
+    } catch (error: any) {
+      console.error("Error submit resep:", error);
+      showNotification("Gagal Menyimpan", error.message || "Terjadi kesalahan saat menyimpan resep");
+      setIsLoading(false);
     }
+  };
+
+  const handleEditRecipe = (recipe: any) => {
+    // Pre-fill form dengan data resep yang akan diedit
+    setForm({
+      title: recipe.title,
+      description: recipe.description,
+      image: recipe.image,
+      difficulty: recipe.difficulty,
+      time: recipe.time,
+      ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients.join("\n") : recipe.ingredients,
+      instructions: Array.isArray(recipe.instructions) ? recipe.instructions.join("\n") : recipe.instructions,
+      relatedProductId: recipe.relatedProductId || "",
+    });
+    setEditMode({ isEditing: true, recipeId: recipe._id });
+    
+    // Scroll ke form
+    window.scrollTo({ top: document.querySelector('form')?.offsetTop || 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setForm(initialFormState);
+    setEditMode({ isEditing: false, recipeId: null });
   };
 
   const handleDeleteRecipe = async (recipeId: string) => {
@@ -105,10 +157,10 @@ export default function CreateRecipePage() {
       const res = await fetch(`/api/recipes/${recipeId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Gagal menghapus resep");
       
-      alert("Resep berhasil dihapus!");
+      showNotification("Resep Dihapus", "Resep berhasil dihapus dari koleksi Anda");
       setMyRecipes(myRecipes.filter(r => r._id !== recipeId));
     } catch (error: any) {
-      alert("Error: " + error.message);
+      showNotification("Error", error.message);
     }
   };
 
@@ -131,15 +183,23 @@ export default function CreateRecipePage() {
                 <img src={recipe.image} alt={recipe.title} className="w-full h-40 object-cover" />
                 <div className="p-4">
                   <h3 className="font-bold text-gray-800 mb-1">{recipe.title}</h3>
-                  <p className="text-sm text-gray-600 flex items-center gap-1 mb-2">
+                  <p className="text-sm text-gray-600 flex items-center gap-1 mb-3">
                     <Clock size={14} /> {recipe.time}
                   </p>
-                  <button
-                    onClick={() => handleDeleteRecipe(recipe._id)}
-                    className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={16} /> Hapus
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditRecipe(recipe)}
+                      className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Edit size={16} /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteRecipe(recipe._id)}
+                      className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={16} /> Hapus
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -147,7 +207,19 @@ export default function CreateRecipePage() {
         </div>
       )}
 
-      <h2 className="text-xl font-bold mb-4 text-gray-800">Tulis Resep Baru</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-800">
+          {editMode.isEditing ? "Edit Resep" : "Tulis Resep Baru"}
+        </h2>
+        {editMode.isEditing && (
+          <button
+            onClick={handleCancelEdit}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            <XCircle size={16} /> Batal Edit
+          </button>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 space-y-8">
         
@@ -254,7 +326,7 @@ export default function CreateRecipePage() {
                 rows={8}
                 className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder={"500gr Udang\n2 Siung Bawang\n1 sdt Garam..."}
-                value={form.ingredients} // ✅ Controlled Input
+                value={form.ingredients}
                 onChange={(e) => setForm({...form, ingredients: e.target.value})}
               />
            </div>
@@ -274,9 +346,19 @@ export default function CreateRecipePage() {
         <button 
           type="submit" 
           disabled={isLoading}
-          className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 disabled:opacity-70 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 ${
+            editMode.isEditing
+              ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700"
+              : "bg-blue-600 text-white hover:bg-blue-700"
+          } disabled:opacity-70`}
         >
-          {isLoading ? <Loader2 className="animate-spin" /> : <><Save size={20} /> Terbitkan Resep</>}
+          {isLoading ? (
+            <Loader2 className="animate-spin" />
+          ) : (
+            <>
+              <Save size={20} /> {editMode.isEditing ? "Simpan Perubahan" : "Terbitkan Resep"}
+            </>
+          )}
         </button>
 
       </form>

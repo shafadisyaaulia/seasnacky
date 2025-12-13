@@ -1,35 +1,35 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import connectDB from "@/lib/mongodb";
+import Tip from "@/models/Tip";
 
-const tips = [
-  {
-    id: 1,
-    title: "Cara Menyimpan Ikan Agar Tetap Segar",
-    slug: "cara-menyimpan-ikan",
-    content: "Cuci bersih ikan, buang isi perut, simpan di wadah tertutup...",
-    date: "2024-02-01",
-    author: "Admin",
-  },
-  {
-    id: 2,
-    title: "Ciri-ciri Udang Segar",
-    slug: "ciri-udang-segar",
-    content: "Kulit keras, bau segar, warna bening...",
-    date: "2024-02-05",
-    author: "Admin",
-  },
-];
-
+// GET - Get single tip by slug
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await params; // Next.js 15 wajib await params
-  
-  const tip = tips.find((t) => t.slug === slug);
+  try {
+    await connectDB();
 
-  if (!tip) {
-    return NextResponse.json({ error: "Tips tidak ditemukan" }, { status: 404 });
+    const { slug } = await params;
+
+    const tip = await Tip.findOne({ slug, published: true }).lean();
+
+    if (!tip) {
+      return NextResponse.json(
+        { message: "Tip tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+
+    // Increment views
+    await Tip.findByIdAndUpdate(tip._id, { $inc: { views: 1 } });
+
+    return NextResponse.json({ tip });
+  } catch (error) {
+    console.error("Error fetching tip:", error);
+    return NextResponse.json(
+      { message: "Gagal mengambil tip" },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ data: tip });
 }

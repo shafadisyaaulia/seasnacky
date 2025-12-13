@@ -1,17 +1,17 @@
-import SellerSidebar from "@/components/layout/SellerSidebar";
+import SellerShopInfo from "@/components/seller/SellerShopInfo";
+import SellerNavbar from "@/components/seller/SellerNavbar";
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar (Fixed di kiri) */}
-      <SellerSidebar />
+    <div className="min-h-screen bg-gray-50">
+      {/* Info Toko - Sebelum Navbar */}
+      <SellerShopInfo />
+      
+      {/* Navbar Horizontal untuk Dashboard Seller */}
+      <SellerNavbar />
 
-      {/* PERBAIKAN UTAMA ADA DI SINI:
-         'ml-64' = Memberi margin kiri sebesar lebar sidebar (agar tidak ketimpa)
-         'w-full' = Memastikan konten mengambil sisa lebar layar
-         'pt-2' = Memberi sedikit jarak atas (opsional)
-      */}
-      <main className="flex-1 ml-64 p-8 w-full transition-all duration-300">
+      {/* Main Content */}
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
     </div>

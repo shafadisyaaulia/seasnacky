@@ -3,12 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { ShoppingBag, Truck, CheckCircle, Clock, Loader2, RefreshCw, X } from "lucide-react";
 import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
+import { useNotification } from "@/context/NotificationContext";
 
 export default function SellerOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const previousOrderCount = useRef(0);
+  const { showNotification } = useNotification();
   
   // State Modal & Resi
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -64,7 +66,8 @@ export default function SellerOrdersPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     // Validasi Resi jika mau kirim barang
     if (newStatus === 'shipped' && !resiInput) {
-        return alert("Harap masukkan Nomor Resi terlebih dahulu!");
+        showNotification("Nomor Resi Diperlukan", "Harap masukkan nomor resi terlebih dahulu!");
+        return;
     }
 
     if (!confirm(`Ubah status pesanan menjadi "${newStatus}"?`)) return;
@@ -81,15 +84,15 @@ export default function SellerOrdersPage() {
       });
 
       if (res.ok) {
-        alert("✅ Status berhasil diperbarui!");
+        showNotification("Status Diperbarui!", `Status pesanan berhasil diubah menjadi "${newStatus}"`);
         setSelectedOrder(null);
         setResiInput(""); // Reset input resi
         fetchOrders(); 
       } else {
-        alert("Gagal update status.");
+        showNotification("Gagal Update", "Terjadi kesalahan saat memperbarui status");
       }
     } catch (error) {
-      alert("Terjadi kesalahan.");
+      showNotification("Error", "Terjadi kesalahan koneksi");
     } finally {
       setIsUpdating(false);
     }

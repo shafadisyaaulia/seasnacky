@@ -25,7 +25,46 @@ export async function GET() {
   }
 }
 
-// Dummy PUT untuk update profile (biar build lolos dulu)
-export async function PUT() {
-    return NextResponse.json({ message: "Update berhasil (Dummy)" });
+export async function PUT(req: Request) {
+  try {
+    const session = await getAuthUser();
+    if (!session?.sub) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { name, phone, address } = body;
+
+    // Validasi
+    if (!name || name.trim().length === 0) {
+      return NextResponse.json({ error: "Nama tidak boleh kosong" }, { status: 400 });
+    }
+
+    await connectDB();
+    
+    // Update user data
+    const updatedUser = await User.findByIdAndUpdate(
+      session.sub,
+      {
+        name: name.trim(),
+        phone: phone?.trim() || "",
+        address: address?.trim() || "",
+      },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ 
+      message: "Profile berhasil diperbarui",
+      data: updatedUser 
+    });
+  } catch (error: any) {
+    console.error("Error updating profile:", error);
+    return NextResponse.json({ 
+      error: error.message || "Server Error" 
+    }, { status: 500 });
+  }
 }

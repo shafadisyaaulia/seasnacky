@@ -41,9 +41,15 @@ export default function LoginPage() {
         throw new Error(data.error || "Gagal login");
       }
 
-      // Refresh router agar Navbar berubah state-nya (dari Login -> Profil)
-      router.refresh(); 
-      router.push("/"); // Redirect ke Homepage
+      // Redirect berdasarkan role user
+      if (data.user?.role === 'ADMIN' || data.user?.role === 'admin') {
+        router.push("/dashboard/admin");
+      } else if (data.user?.role === 'SELLER' || data.user?.role === 'seller') {
+        router.push("/dashboard/seller");
+      } else {
+        router.push("/dashboard");
+      }
+      router.refresh();
       
     } catch (err: any) {
       setError(err.message);

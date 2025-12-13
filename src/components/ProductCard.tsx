@@ -4,7 +4,8 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
-import Toast from "@/components/Toast";
+import { useNotification } from "@/context/NotificationContext";
+import WishlistButton from "@/components/ui/WishlistButton";
 
 type Product = {
   id: string;
@@ -31,7 +32,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const [added, setAdded] = React.useState(false);
   const [store, setStore] = React.useState<{ name: string; city: string } | null>(null);
   const cart = useCart();
-  const [toast, setToast] = React.useState<string | null>(null);
+  const { showNotification } = useNotification();
   
   console.log("🔍 ProductCard - cart context:", cart);
   console.log("🔍 ProductCard - addItem function:", cart?.addItem);
@@ -73,16 +74,21 @@ export default function ProductCard({ product }: { product: Product }) {
       await addItem({ productId: product.id, quantity: 1 });
       console.log("✅ Item added successfully");
       setAdded(true);
-      setToast("✓ Ditambahkan ke keranjang");
+      
+      // Show custom notification
+      showNotification(
+        "Ditambahkan ke Keranjang!",
+        product.name,
+        product.images?.[0]
+      );
+      
       setTimeout(() => {
         setAdded(false);
-        setToast(null);
       }, 2000);
     } catch (err) {
       console.error("Error adding to cart:", err);
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
-      setToast(msg);
-      setTimeout(() => setToast(null), 3000);
+      showNotification("Gagal", msg);
     } finally {
       setLoading(false);
     }
@@ -105,7 +111,7 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="group relative bg-white rounded-xl shadow-md overflow-hidden border border-slate-100 hover:shadow-lg transition-shadow hover:ring-2 hover:ring-sky-200 hover-lift">
       <div className="relative">
-        <Link href={`/marketplace/${product.slug}`} className="block">
+        <Link href={`/products/${product.id}`} className="block">
           <div className="w-full h-44 bg-gray-100 overflow-hidden relative img-zoom">
             <Image
               src={product.images && product.images[0] || "/placeholder-300.png"}
@@ -116,6 +122,11 @@ export default function ProductCard({ product }: { product: Product }) {
             />
           </div>
         </Link>
+
+        {/* Wishlist Button top-left */}
+        <div className="absolute top-3 left-3 z-10">
+          <WishlistButton productId={product.id} productName={product.name} size="sm" />
+        </div>
 
         {/* unit badge top-right */}
         {product.unit && (
@@ -128,7 +139,7 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="p-4 flex flex-col gap-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-900 line-clamp-2">
-            <Link href={`/marketplace/${product.slug}`}>{product.name}</Link>
+            <Link href={`/products/${product.id}`}>{product.name}</Link>
           </h3>
           <p className="text-xs text-slate-500 mt-1 line-clamp-2">{product.description}</p>
         </div>
@@ -155,43 +166,55 @@ export default function ProductCard({ product }: { product: Product }) {
               </div>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={(e) => {
-              console.log("🔴 BUTTON CLICKED!", e);
-              console.log("🔴 Event target:", e.target);
-              console.log("🔴 Current target:", e.currentTarget);
-              e.preventDefault();
-              e.stopPropagation();
-              addToCart();
-            }}
-            disabled={loading}
-            type="button"
-            className={`flex-1 inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors border border-sky-600 text-sky-700 hover:bg-sky-50 disabled:opacity-60`}
-            style={{ boxShadow: '0 1px 0 rgba(2,6,23,0.04)' }}
+        <div className="space-y-2">
+          {/* Button Lihat Detail */}
+          <Link
+            href={`/products/${product.id}`}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:from-sky-600 hover:to-blue-700 shadow-sm hover:shadow-md group"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l3-8H6.4" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            {loading ? "..." : added ? "✓" : "Keranjang"}
-          </button>
+            Lihat Detail
+          </Link>
 
-          <button
-            onClick={(e) => {
-              console.log("🟢 BUY NOW CLICKED!");
-              e.preventDefault();
-              e.stopPropagation();
-              buyNow();
-            }}
-            type="button"
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors btn-primary btn-press"
-            style={{ boxShadow: '0 1px 0 rgba(2,6,23,0.04)' }}
-          >
-            Beli Sekarang
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                addToCart();
+              }}
+              disabled={loading}
+              type="button"
+              className={`flex-1 inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors border border-sky-600 text-sky-700 hover:bg-sky-50 disabled:opacity-60`}
+              style={{ boxShadow: '0 1px 0 rgba(2,6,23,0.04)' }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l3-8H6.4" />
+              </svg>
+              {loading ? "..." : added ? "✓" : "Keranjang"}
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                buyNow();
+              }}
+              type="button"
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors btn-primary btn-press"
+              style={{ boxShadow: '0 1px 0 rgba(2,6,23,0.04)' }}
+            >
+              Beli Sekarang
+            </button>
+          </div>
         </div>
       </div>
-      <Toast message={toast} />
     </div>
   );
 }
+ 
+
+

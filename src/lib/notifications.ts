@@ -70,6 +70,17 @@ export function notifyOrderStatusChange(orderId: string, status: string) {
   playNotificationSound();
 }
 
+export function notifyAddedToCart(productName: string, quantity: number = 1) {
+  showNotification("🛒 Ditambahkan ke Keranjang!", {
+    body: `${productName}${quantity > 1 ? ` (${quantity}x)` : ''}\nBerhasil ditambahkan ke keranjang`,
+    tag: 'cart-add',
+    icon: '/logo.png',
+    badge: '/logo.png',
+  });
+
+  playNotificationSound();
+}
+
 function playNotificationSound() {
   try {
     const audio = new Audio('/notification.mp3'); // Bisa tambahkan file sound

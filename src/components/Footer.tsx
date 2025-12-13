@@ -19,7 +19,7 @@ export default function Footer() {
             <div>
               <div className="font-semibold mb-2">Produk</div>
               <ul className="space-y-1">
-                <li><a href="/marketplace" className="text-slate-600">Marketplace</a></li>
+                <li><a href="/products" className="text-slate-600">Produk</a></li>
                 <li><a href="#" className="text-slate-600">Promo</a></li>
               </ul>
             </div>

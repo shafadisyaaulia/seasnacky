@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useNotification } from "@/context/NotificationContext";
 
 export default function AddRecipePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { showNotification } = useNotification();
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -71,10 +73,10 @@ export default function AddRecipePage() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Gagal upload resep");
-      alert("Resep berhasil ditambahkan!");
+      showNotification("Resep Ditambahkan!", "Resep berhasil ditambahkan ke koleksi Anda 👨‍🍳");
       router.push("/dashboard/seller/recipes");
     } catch (error) {
-      alert("Error: " + error);
+      showNotification("Gagal", "Error: " + error);
     } finally {
       setIsLoading(false);
     }

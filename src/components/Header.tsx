@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useRef, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { CartContext } from "@/context/CartContext";
-import { User, Store, LogOut, LayoutDashboard, ShoppingCart } from "lucide-react"; // Ikon biar cantik
+import { User, Store, LogOut, LayoutDashboard, ShoppingCart, Heart } from "lucide-react"; // Ikon biar cantik
 
 export default function Header() {
   // 1. Tambahkan 'role' di tipe state user
@@ -49,25 +50,41 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        {/* LOGO */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-lg font-bold text-white shadow-lg group-hover:scale-110 transition-transform">
-            SS
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-lg border-b border-cyan-100">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
+        {/* LOGO with Wave Animation */}
+        <Link href="/" className="flex items-center gap-3 group relative">
+          <div className="relative w-11 h-11 flex-shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-500 to-blue-600 rounded-full opacity-20 blur-md group-hover:opacity-40 transition-opacity duration-300"></div>
+            <div className="relative w-11 h-11 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+              <Image 
+                src="/seasnacky-logo.png" 
+                alt="SeaSnacky Logo" 
+                width={44}
+                height={44}
+                className="object-contain drop-shadow-md"
+                priority
+              />
+            </div>
           </div>
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+          <span className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 animate-gradient bg-[length:200%_auto] group-hover:scale-105 transition-transform">
             SeaSnacky
           </span>
         </Link>
 
         {/* MENU TENGAH */}
         <nav className="hidden md:flex items-center gap-8">
-          <Link href="/products" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition">
-            Belanja
+          <Link href="/products" className="relative text-sm font-semibold text-slate-700 hover:text-cyan-600 transition-colors group">
+            <span>Belanja</span>
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 group-hover:w-full transition-all duration-300"></span>
           </Link>
-          <Link href="/recipes" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition">
-            Resep
+          <Link href="/recipes" className="relative text-sm font-semibold text-slate-700 hover:text-cyan-600 transition-colors group">
+            <span>Resep</span>
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 group-hover:w-full transition-all duration-300"></span>
+          </Link>
+          <Link href="/tips" className="relative text-sm font-semibold text-slate-700 hover:text-cyan-600 transition-colors group">
+            <span>Tips & Artikel</span>
+            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 group-hover:w-full transition-all duration-300"></span>
           </Link>
           {/* Menu Dashboard di Navbar Utama kita hilangkan biar rapi, pindah ke dropdown */}
         </nav>
@@ -126,67 +143,98 @@ export default function Header() {
                     </div>
 
                     <ul className="space-y-1">
-                      {/* 1. Link ke PROFIL (Umum) */}
-                      <li>
-                        <Link
-                          href="/profile"
-                          onClick={() => setOpen(false)}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
-                        >
-                          <User size={16} className="text-slate-400" />
-                          Profil Saya
-                        </Link>
-                      </li>
+                      {/* Conditional Menu Based on Role */}
+                      {user.role === "ADMIN" || user.role === "admin" ? (
+                        // ADMIN: Hanya Keluar
+                        <>
+                          <li>
+                            <button
+                              onClick={handleLogout}
+                              className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                            >
+                              <LogOut size={16} />
+                              Keluar
+                            </button>
+                          </li>
+                        </>
+                      ) : (
+                        // BUYER/SELLER: Full Menu
+                        <>
+                          {/* 1. Link ke PROFIL (Umum) */}
+                          <li>
+                            <Link
+                              href="/profile"
+                              onClick={() => setOpen(false)}
+                              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+                            >
+                              <User size={16} className="text-slate-400" />
+                              Profil Saya
+                            </Link>
+                          </li>
 
-                      {/* 1.5. Pesanan Saya (Untuk semua user) */}
-                      <li>
-                        <Link
-                          href="/user/orders"
-                          onClick={() => setOpen(false)}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
-                        >
-                          <ShoppingCart size={16} className="text-slate-400" />
-                          Pesanan Saya
-                        </Link>
-                      </li>
+                          {/* 1.5. Wishlist (Untuk semua user) */}
+                          <li>
+                            <Link
+                              href="/wishlist"
+                              onClick={() => setOpen(false)}
+                              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+                            >
+                              <Heart size={16} className="text-slate-400" />
+                              Wishlist Saya
+                            </Link>
+                          </li>
 
-                      {/* 2. Link ke TOKO (Logika IF-ELSE) */}
-                      <li>
-                        {user.role === "SELLER" || user.role === "seller" ? (
-                          // JIKA SELLER: Masuk ke Dashboard Toko
-                          <Link
-                            href="/dashboard/seller"
-                            onClick={() => setOpen(false)}
-                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition"
-                          >
-                            <Store size={16} />
-                            Toko Saya
-                          </Link>
-                        ) : (
-                          // JIKA USER BIASA: Buka Toko
-                          <Link
-                            href="/open-shop" // Arahkan ke form buka toko
-                            onClick={() => setOpen(false)}
-                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition"
-                          >
-                            <LayoutDashboard size={16} />
-                            Buka Toko Gratis
-                          </Link>
-                        )}
-                      </li>
+                          {/* 1.6. Pesanan Saya (Untuk semua user) */}
+                          <li>
+                            <Link
+                              href="/user/orders"
+                              onClick={() => setOpen(false)}
+                              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+                            >
+                              <ShoppingCart size={16} className="text-slate-400" />
+                              Pesanan Saya
+                            </Link>
+                          </li>
 
-                      <div className="my-2 border-t border-gray-100"></div>
+                          {/* 2. Link ke TOKO (Logika IF-ELSE) */}
+                          <li>
+                            {user.role === "SELLER" || user.role === "seller" ? (
+                              // JIKA SELLER: Masuk ke Dashboard Toko
+                              <Link
+                                href="/dashboard/seller"
+                                onClick={() => setOpen(false)}
+                                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition"
+                              >
+                                <Store size={16} />
+                                Toko Saya
+                              </Link>
+                            ) : (
+                              // JIKA USER BIASA: Buka Toko
+                              <Link
+                                href="/open-shop"
+                                onClick={() => setOpen(false)}
+                                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 transition"
+                              >
+                                <LayoutDashboard size={16} />
+                                Buka Toko Gratis
+                              </Link>
+                            )}
+                          </li>
 
-                      {/* 3. LOGOUT */}
-                      <li>
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition"
-                        >
-                          <LogOut size={16} />
-                          Keluar
-                        </button>
-                      </li>
+                          <div className="my-2 border-t border-gray-100"></div>
+
+                          {/* 3. LOGOUT */}
+                          <li>
+                            <button
+                              onClick={handleLogout}
+                              className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                            >
+                              <LogOut size={16} />
+                              Keluar
+                            </button>
+                          </li>
+                        </>
+                      )}
                     </ul>
                   </div>
                 )}

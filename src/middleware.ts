@@ -1,15 +1,14 @@
 // File: seasnacky/src/middleware.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose"; // <-- Sesuaikan dengan library JWT Anda (Pastikan ini diimpor)
+import { jwtVerify } from "jose";
 
 // Konfigurasi Kunci Rahasia JWT (Harus sama dengan lib/session.ts)
 const secretKey = process.env.JWT_SECRET || "rahasia-negara-seasnacky";
 const encodedKey = new TextEncoder().encode(secretKey);
 const USER_COOKIE_NAME = "seasnacky_session";
-const ADMIN_COOKIE_NAME = "demo_session"; // Cookie untuk Admin Lama Anda
 
-// --- Fungsi Verifikasi Token (Harus ada) ---
+// --- Fungsi Verifikasi Token ---
 async function verifyUserToken(token: string) {
     try {
         const { payload } = await jwtVerify(token, encodedKey, {
@@ -26,28 +25,10 @@ export async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
     const url = request.nextUrl.clone();
 
-    // =========================================================
-    // A. LOGIKA PROTEKSI RUTE ADMIN LAMA (Menggunakan demo_session)
-    // =========================================================
-    const isAdminRoute = path.startsWith("/admin");
-    const hasDemoSession = request.cookies.has(ADMIN_COOKIE_NAME);
-
-    if (isAdminRoute) {
-        if (!hasDemoSession && !path.startsWith("/admin/login") && !path.startsWith("/admin/register")) {
-            return NextResponse.redirect(new URL("/admin/login", request.url));
-        }
-        if (hasDemoSession && (path.startsWith("/admin/login") || path.startsWith("/admin/register"))) {
-            return NextResponse.redirect(new URL("/admin", request.url));
-        }
-    }
-    
-    // =========================================================
-    // B. LOGIKA PROTEKSI RUTE USER & SELLER (Menggunakan seasnacky_session)
-    // =========================================================
-    
     const userSession = request.cookies.get(USER_COOKIE_NAME)?.value;
     const isAuthRoute = path.startsWith('/dashboard') || path.startsWith('/open-shop');
-    const isSellerRoute = path.startsWith('/dashboard/seller'); 
+    const isSellerRoute = path.startsWith('/dashboard/seller');
+    const isAdminRoute = path.startsWith('/dashboard/admin');
 
     let userPayload: any = null;
     if (userSession) {
@@ -55,23 +36,34 @@ export async function middleware(request: NextRequest) {
     }
     const isAuthenticated = !!userPayload;
 
-    // 1. Proteksi Halaman Login/Register (Jika sudah login, redirect ke /dashboard)
-    if ((path.startsWith("/auth/login") || path.startsWith("/auth/regis")) && isAuthenticated) {
-        return NextResponse.redirect(new URL("/", request.url));
+    // 1. Proteksi Halaman Login/Register (Jika sudah login, redirect berdasarkan role)
+    if ((path.startsWith("/login") || path.startsWith("/register")) && isAuthenticated) {
+        if (userPayload?.role === 'ADMIN' || userPayload?.role === 'admin') {
+            return NextResponse.redirect(new URL("/dashboard/admin", request.url));
+        } else if (userPayload?.role === 'SELLER' || userPayload?.role === 'seller') {
+            return NextResponse.redirect(new URL("/dashboard/seller", request.url));
+        } else {
+            return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
     }
     
-    // 2. Proteksi Halaman Dashboard Umum & Open Shop (Membutuhkan login)
+    // 2. Proteksi Halaman Dashboard (Membutuhkan login)
     if (isAuthRoute && !isAuthenticated) {
-        url.pathname = '/auth/login';
+        url.pathname = '/login';
         url.searchParams.set('redirect', path);
         return NextResponse.redirect(url);
     }
     
-    // 3. Proteksi Halaman Seller (Membutuhkan role 'seller')
+    // 3. Proteksi Halaman Admin (Membutuhkan role 'ADMIN')
+    if (isAdminRoute && isAuthenticated) {
+        if (userPayload?.role !== 'ADMIN' && userPayload?.role !== 'admin') {
+            return NextResponse.redirect(new URL("/dashboard", request.url));
+        }
+    }
+    
+    // 4. Proteksi Halaman Seller (Membutuhkan role 'SELLER')
     if (isSellerRoute && isAuthenticated) {
-        // Cek jika user login tapi BUKAN seller atau statusnya pending (role masih 'buyer')
-        if (userPayload?.role !== 'seller') {
-            // Redirect ke dashboard utama (halaman pending seller)
+        if (userPayload?.role !== 'SELLER' && userPayload?.role !== 'seller') {
             return NextResponse.redirect(new URL("/dashboard", request.url));
         }
     }
@@ -83,11 +75,10 @@ export async function middleware(request: NextRequest) {
 // --- KONFIGURASI MATCHER ---
 export const config = {
     matcher: [
-        // Rute Admin
-        "/admin/:path*", "/admin/login", "/admin/register",
-        // Rute User & Seller
-        "/dashboard/:path*", "/open-shop", "/login", "/register",
-        // Pengecualian: jangan proses file statis
-        "/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)", 
+        "/dashboard/:path*", 
+        "/open-shop", 
+        "/login", 
+        "/register",
+        "/((?!_next/static|_next/image|favicon.ico|api|.*\\.png$).*)", 
     ],
 };

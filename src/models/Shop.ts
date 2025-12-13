@@ -22,6 +22,22 @@ const ShopSchema = new mongoose.Schema({
         required: [true, "Alamat toko wajib diisi"] 
     },
 
+    // Informasi Rekening untuk Pembayaran
+    bankName: {
+        type: String,
+        default: ""
+    },
+    
+    bankAccountNumber: {
+        type: String,
+        default: ""
+    },
+    
+    bankAccountName: {
+        type: String,
+        default: ""
+    },
+
     // ID Seller: Menautkan Toko ini ke User Seller tertentu (Wajib)
     sellerId: {
         type: Schema.Types.ObjectId,

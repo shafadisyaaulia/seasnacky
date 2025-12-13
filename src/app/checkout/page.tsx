@@ -3,6 +3,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { useNotification } from "@/context/NotificationContext";
 import Image from "next/image";
 
 export default function CheckoutPage() {
@@ -11,6 +12,7 @@ export default function CheckoutPage() {
   const isDirect = searchParams.get("direct") === "true";
   
   const cart = useCart();
+  const { showNotification } = useNotification();
   const [items, setItems] = useState<Array<{productId: string, quantity: number}>>([]);
   const [me, setMe] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -118,12 +120,30 @@ export default function CheckoutPage() {
 
   const handleCheckout = async () => {
     // Validation
-    if (!name.trim()) return alert("Nama lengkap harus diisi.");
-    if (!phone.trim()) return alert("Nomor telepon harus diisi.");
-    if (!provinceId) return alert("Provinsi harus dipilih.");
-    if (!cityId) return alert("Kota harus dipilih.");
-    if (!address.trim()) return alert("Alamat lengkap harus diisi.");
-    if (!items || items.length === 0) return alert("Keranjang kosong.");
+    if (!name.trim()) {
+      showNotification("Data Tidak Lengkap", "Nama lengkap harus diisi");
+      return;
+    }
+    if (!phone.trim()) {
+      showNotification("Data Tidak Lengkap", "Nomor telepon harus diisi");
+      return;
+    }
+    if (!provinceId) {
+      showNotification("Data Tidak Lengkap", "Provinsi harus dipilih");
+      return;
+    }
+    if (!cityId) {
+      showNotification("Data Tidak Lengkap", "Kota harus dipilih");
+      return;
+    }
+    if (!address.trim()) {
+      showNotification("Data Tidak Lengkap", "Alamat lengkap harus diisi");
+      return;
+    }
+    if (!items || items.length === 0) {
+      showNotification("Keranjang Kosong", "Tidak ada item untuk checkout");
+      return;
+    }
     
     setLoading(true);
     try {
@@ -181,7 +201,7 @@ export default function CheckoutPage() {
       router.push(`/payment?orderId=${data.id}`);
     } catch (err) {
       console.error(err);
-      alert("Gagal melakukan checkout. Coba lagi.");
+      showNotification("Checkout Gagal", "Terjadi kesalahan. Silakan coba lagi");
     } finally {
       setLoading(false);
     }

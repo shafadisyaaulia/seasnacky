@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 // import { Geist, Geist_Mono } from "next/font/google"; 
 import "./globals.css"; 
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import ConditionalLayout from "@/components/layout/ConditionalLayout";
 import { CartProvider } from "@/context/CartContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import { Toaster } from 'react-hot-toast'; // ✅ WAJIB DIIMPORT
 
 /* // Font Google dimatikan sementara agar build Docker tidak Time Out
@@ -43,11 +43,13 @@ export default function RootLayout({
         /> 
         {/* ======================================================= */}
         
-        <CartProvider>
-          <Header />
-          <div className="min-h-[60vh]">{children}</div>
-          <Footer />
-        </CartProvider>
+        <NotificationProvider>
+          <CartProvider>
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
+          </CartProvider>
+        </NotificationProvider>
       </body>
     </html>
   );

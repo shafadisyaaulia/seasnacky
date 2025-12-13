@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, ShoppingCart, Filter, Loader2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useNotification } from "@/context/NotificationContext";
 
 interface Product {
   _id: string;
@@ -21,6 +22,7 @@ export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const cart = useCart();
+  const { showNotification } = useNotification();
   
   console.log("🔍 Products Page - cart context:", cart);
   console.log("🔍 Products Page - addItem function:", cart?.addItem);
@@ -92,8 +94,21 @@ export default function MarketplacePage() {
                 <div className="p-4 flex flex-col flex-grow">
                   <h3 className="font-semibold text-gray-900 line-clamp-1 mb-1">{product.name}</h3>
                   <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-grow">{product.description}</p>
-                  <div className="mt-auto">
+                  <div className="mt-auto space-y-2">
                     <div className="text-lg font-bold text-blue-600 mb-3">Rp {product.price.toLocaleString("id-ID")}</div>
+                    
+                    {/* Button Lihat Detail */}
+                    <Link 
+                      href={`/products/${product._id}`}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-lg hover:from-sky-600 hover:to-blue-700 transition-all shadow-sm hover:shadow-md text-sm font-semibold group"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      Lihat Detail
+                    </Link>
+                    
                     <div className="flex gap-2">
                       <button 
                         onClick={async (e) => {
@@ -112,7 +127,13 @@ export default function MarketplacePage() {
                             console.log("🛒 Calling addItem...");
                             await cart.addItem({ productId: product._id, quantity: 1 });
                             console.log("✅ Item added successfully");
-                            alert("✓ Ditambahkan ke keranjang!");
+                            
+                            // Show custom notification
+                            showNotification(
+                              "Ditambahkan ke Keranjang!",
+                              product.name,
+                              product.images?.[0]
+                            );
                           } catch (error) {
                             console.error("❌ Error adding to cart:", error);
                             alert("Gagal menambahkan ke keranjang");
