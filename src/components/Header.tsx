@@ -26,8 +26,14 @@ export default function Header() {
   useEffect(() => {
     fetch("/api/me")
       .then((r) => r.json())
-      .then((json) => setUser(json?.data ?? null))
-      .catch(() => setUser(null));
+      .then((json) => {
+        console.log("API /api/me response:", json); // Debug log
+        setUser(json?.data ?? null);
+      })
+      .catch((err) => {
+        console.error("Error fetching user:", err);
+        setUser(null);
+      });
   }, []);
 
   // Tutup dropdown kalau klik di luar
@@ -106,12 +112,16 @@ export default function Header() {
           <div className="relative" ref={dropdownRef}>
             {!user ? (
               // KONDISI: BELUM LOGIN
-              <Link
-                href="/login" // Pastikan arahnya ke login page yang benar (bukan /user/login kalau folder lama udh dihapus)
+              <button
+                onClick={async () => {
+                  // Logout dulu jika ada session tersembunyi
+                  await fetch("/api/logout", { method: "POST" });
+                  router.push("/login");
+                }}
                 className="rounded-full bg-blue-600 px-6 py-2 text-white font-semibold shadow hover:bg-blue-700 transition"
               >
                 Masuk
-              </Link>
+              </button>
             ) : (
               // KONDISI: SUDAH LOGIN
               <div>
@@ -145,8 +155,18 @@ export default function Header() {
                     <ul className="space-y-1">
                       {/* Conditional Menu Based on Role */}
                       {user.role === "ADMIN" || user.role === "admin" ? (
-                        // ADMIN: Hanya Keluar
+                        // ADMIN: Dashboard Admin + Keluar
                         <>
+                          <li>
+                            <Link
+                              href="/dashboard/admin"
+                              onClick={() => setOpen(false)}
+                              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+                            >
+                              <LayoutDashboard size={16} className="text-slate-400" />
+                              Dashboard Admin
+                            </Link>
+                          </li>
                           <li>
                             <button
                               onClick={handleLogout}
