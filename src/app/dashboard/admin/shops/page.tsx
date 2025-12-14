@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle, XCircle, Clock, MapPin, User, Loader2 } from "lucide-react";
 import AdminNavbar from "@/components/admin/AdminNavbar";
+import toast from "react-hot-toast";
 
 interface Shop {
   _id: string;
@@ -43,6 +44,8 @@ export default function AdminShopsPage() {
 
   const handleApprove = async (shopId: string) => {
     setActionLoading(shopId);
+    const toastId = toast.loading("Menyetujui toko...");
+    
     try {
       const res = await fetch(`/api/dashboard/admin/shops/${shopId}`, {
         method: "PATCH",
@@ -51,13 +54,13 @@ export default function AdminShopsPage() {
       });
 
       if (res.ok) {
-        alert("✅ Toko berhasil disetujui!");
+        toast.success("✅ Toko berhasil disetujui!", { id: toastId });
         fetchShops();
       } else {
-        alert("❌ Gagal menyetujui toko");
+        toast.error("❌ Gagal menyetujui toko", { id: toastId });
       }
     } catch (error) {
-      alert("❌ Terjadi kesalahan");
+      toast.error("❌ Terjadi kesalahan", { id: toastId });
     } finally {
       setActionLoading(null);
     }
@@ -65,8 +68,9 @@ export default function AdminShopsPage() {
 
   const handleReject = async (shopId: string) => {
     if (!confirm("Yakin ingin menolak toko ini?")) return;
-
     setActionLoading(shopId);
+    const toastId = toast.loading("Menolak toko...");
+    
     try {
       const res = await fetch(`/api/dashboard/admin/shops/${shopId}`, {
         method: "PATCH",
@@ -75,13 +79,13 @@ export default function AdminShopsPage() {
       });
 
       if (res.ok) {
-        alert("🚫 Toko ditolak");
+        toast.success("🚫 Toko ditolak", { id: toastId });
         fetchShops();
       } else {
-        alert("❌ Gagal menolak toko");
+        toast.error("❌ Gagal menolak toko", { id: toastId });
       }
     } catch (error) {
-      alert("❌ Terjadi kesalahan");
+      toast.error("❌ Terjadi kesalahan", { id: toastId });
     } finally {
       setActionLoading(null);
     }

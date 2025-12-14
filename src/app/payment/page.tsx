@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { QRCodeSVG } from "qrcode.react";
+import toast from "react-hot-toast";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -138,11 +139,11 @@ export default function PaymentPage() {
       } else {
         const errorData = await res.json().catch(() => ({ message: "Unknown error" }));
         console.error("Payment failed:", errorData);
-        alert(`Gagal memproses pembayaran: ${errorData.message || "Silakan coba lagi"}`);
+        toast.error(`Gagal memproses pembayaran: ${errorData.message || "Silakan coba lagi"}`);
       }
     } catch (err) {
       console.error("Payment error:", err);
-      alert("Terjadi kesalahan. Silakan coba lagi.");
+      toast.error("Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }

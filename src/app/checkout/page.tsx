@@ -172,7 +172,7 @@ export default function CheckoutPage() {
         const errorData = await res.json();
         console.error("Checkout error:", errorData);
         if (res.status === 401) {
-          alert("Sesi Anda telah berakhir. Silakan login kembali.");
+          toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
           router.push("/login");
           return;
         }

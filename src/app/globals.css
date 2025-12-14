@@ -122,30 +122,3 @@ body {
 .animate-slide-up {
   animation: slide-up 0.4s ease-out;
 }
-
-/* Gradient Animation for Header */
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.animate-gradient {
-  animation: gradient 3s ease infinite;
-}
-
-/* Smooth fade-in slide */
-@keyframes fade-in-slide {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-in {
-  animation: fade-in-slide 0.2s ease-out;
-}

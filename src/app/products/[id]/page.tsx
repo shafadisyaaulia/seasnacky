@@ -1,12 +1,14 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { notFound, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import connectDB from "@/lib/mongodb";
-import Product from "@/models/Product";
-import Review from "@/models/Review";
 import { ArrowLeft, ShoppingCart, Star, Store } from "lucide-react";
 import ProductDetailClient from "./ProductDetailClient";
 import WishlistButton from "@/components/ui/WishlistButton";
+import { useEffect, useState } from "react";
+import { useCart } from "@/context/CartContext";
+import toast from "react-hot-toast";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("id-ID", {
@@ -16,27 +18,99 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-export default async function ProductDetailPage({
+export default function ProductDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  await connectDB();
-  
-  let product = null;
-  try {
-    product = await Product.findById(id).lean();
-  } catch (e) {
-    console.error("Invalid Product ID");
+  const router = useRouter();
+  const cart = useCart();
+  const [id, setId] = useState<string>("");
+  const [product, setProduct] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState(false);
+
+  useEffect(() => {
+    params.then(p => {
+      setId(p.id);
+      fetchProductData(p.id);
+    });
+  }, []);
+
+  const fetchProductData = async (productId: string) => {
+    try {
+      const res = await fetch(`/api/products/${productId}`);
+      if (!res.ok) {
+        notFound();
+        return;
+      }
+      const data = await res.json();
+      setProduct(data.data || data); // Handle both {data: product} and direct product response
+
+      // Fetch reviews
+      const reviewsRes = await fetch(`/api/reviews?productId=${productId}`);
+      if (reviewsRes.ok) {
+        const reviewsData = await reviewsRes.json();
+        setReviews(reviewsData.reviews || []);
+      }
+    } catch (error) {
+      console.error("Error fetching product:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!cart?.addItem) {
+      toast.error("Gagal menambahkan ke keranjang");
+      return;
+    }
+
+    setAddingToCart(true);
+    const toastId = toast.loading("Menambahkan ke keranjang...");
+    
+    try {
+      await cart.addItem({ productId: id, quantity: 1 });
+      toast.success("✓ Ditambahkan ke keranjang!", { id: toastId });
+      router.push("/cart");
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error("Gagal menambahkan ke keranjang", { id: toastId });
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = () => {
+    sessionStorage.setItem(
+      "directBuy",
+      JSON.stringify({
+        productId: id,
+        quantity: 1,
+        isDirect: true,
+      })
+    );
+    router.push("/checkout?direct=true");
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 sm:py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-20">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Memuat produk...</p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   if (!product) {
     return notFound();
   }
 
-  // Fetch reviews stats
-  const reviews = await Review.find({ productId: id }).lean();
   const totalReviews = reviews.length;
   const averageRating = totalReviews > 0
     ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
@@ -143,15 +217,19 @@ export default async function ProductDetailPage({
 
               {/* CTA Buttons */}
               <div className="mt-auto space-y-3">
-                <Link
-                  href={`/products`}
-                  className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl"
+                <button
+                  onClick={handleAddToCart}
+                  disabled={addingToCart}
+                  className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ShoppingCart size={20} />
-                  Tambah ke Keranjang
-                </Link>
+                  {addingToCart ? "Menambahkan..." : "Tambah ke Keranjang"}
+                </button>
                 
-                <button className="w-full border-2 border-blue-600 text-blue-600 px-6 py-4 rounded-xl font-semibold hover:bg-blue-50 transition-all">
+                <button 
+                  onClick={handleBuyNow}
+                  className="w-full border-2 border-blue-600 text-blue-600 px-6 py-4 rounded-xl font-semibold hover:bg-blue-50 transition-all"
+                >
                   Beli Sekarang
                 </button>
               </div>

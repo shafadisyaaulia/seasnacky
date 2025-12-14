@@ -41,14 +41,8 @@ export default function LoginPage() {
         throw new Error(data.error || "Gagal login");
       }
 
-      // Redirect berdasarkan role user
-      if (data.user?.role === 'ADMIN' || data.user?.role === 'admin') {
-        router.push("/dashboard/admin");
-      } else if (data.user?.role === 'SELLER' || data.user?.role === 'seller') {
-        router.push("/dashboard/seller");
-      } else {
-        router.push("/dashboard");
-      }
+      // Redirect semua user ke katalog produk setelah login
+      router.push("/products");
       router.refresh();
       
     } catch (err: any) {

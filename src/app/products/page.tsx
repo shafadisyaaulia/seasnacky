@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, ShoppingCart, Filter, Loader2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import toast from "react-hot-toast";
 import { useNotification } from "@/context/NotificationContext";
 
 interface Product {

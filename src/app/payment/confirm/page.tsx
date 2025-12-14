@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 export default function PaymentConfirmPage() {
   const router = useRouter();
@@ -48,11 +49,11 @@ export default function PaymentConfirmPage() {
         // Redirect to success page
         router.push(`/payment/success?orderId=${orderId}`);
       } else {
-        alert("Gagal memproses pembayaran. Silakan coba lagi.");
+        toast.error("Gagal memproses pembayaran. Silakan coba lagi.");
       }
     } catch (err) {
       console.error("Payment error:", err);
-      alert("Terjadi kesalahan. Silakan coba lagi.");
+      toast.error("Terjadi kesalahan. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
