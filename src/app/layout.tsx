@@ -6,6 +6,7 @@ import ConditionalLayout from "@/components/layout/ConditionalLayout";
 import { CartProvider } from "@/context/CartContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { Toaster } from 'react-hot-toast'; // ✅ WAJIB DIIMPORT
+import ShopStatusChecker from "@/components/ShopStatusChecker";
 
 /* // Font Google dimatikan sementara agar build Docker tidak Time Out
 const geistSans = Geist({
@@ -45,6 +46,7 @@ export default function RootLayout({
         
         <NotificationProvider>
           <CartProvider>
+            <ShopStatusChecker />
             <ConditionalLayout>
               {children}
             </ConditionalLayout>

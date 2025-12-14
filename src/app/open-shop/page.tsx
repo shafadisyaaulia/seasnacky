@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Store, Loader2 } from "lucide-react"; 
 import toast from 'react-hot-toast'; // Pastikan library ini sudah terinstal
+import { notifyShopCreated, requestNotificationPermission } from "@/lib/notifications";
 
 export default function OpenShopPage() {
     const router = useRouter();
@@ -22,6 +23,9 @@ export default function OpenShopPage() {
 
     // 1. OTOMATIS AMBIL ID USER & CEK STATUS TOKO
     useEffect(() => {
+        // Request notification permission on component mount
+        requestNotificationPermission();
+        
         const fetchUser = async () => {
             try {
                 const res = await fetch("/api/auth/me"); 
@@ -106,6 +110,11 @@ export default function OpenShopPage() {
 
             // Notifikasi SUKSES
             toast.success("📝 Pengajuan Toko Berhasil! Menunggu persetujuan Admin.");
+            
+            // Show browser notification if enabled
+            if (data.notifyShopCreated && data.shopName) {
+                notifyShopCreated(data.shopName);
+            }
             
             // Redirect ke Dashboard Buyer/Utama (karena role belum berubah)
             setTimeout(() => {

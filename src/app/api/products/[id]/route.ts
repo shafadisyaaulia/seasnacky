@@ -34,6 +34,7 @@ export async function PUT(
     const updateData = {
       name: body.name,
       price: body.price,
+      unit: body.unit || "kg",
       countInStock: body.stock,
       category: body.category,
       description: body.description,

@@ -13,6 +13,7 @@ interface Product {
   image: string;
   images?: string[]; // Jaga-jaga kalau pakai array images
   price: number;
+  unit?: string;
   slug: string;
   category?: string;
 }
@@ -126,7 +127,7 @@ export default function ProductCatalog() {
             
             <div className="mt-2 flex items-center justify-between">
                 <p className="text-sm font-bold text-blue-600">
-                {formatCurrency(product.price)}
+                {formatCurrency(product.price)}{product.unit ? `/${product.unit}` : ""}
                 </p>
                 {product.category && (
                     <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-full">

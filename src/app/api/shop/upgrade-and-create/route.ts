@@ -53,10 +53,12 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // 5. Sukses
+        // 5. Sukses - Send notification event
         return NextResponse.json({
             message: "Pendaftaran toko berhasil diajukan. Menunggu persetujuan Admin!",
-            shop: newShop
+            shop: newShop,
+            notifyShopCreated: true, // Flag to trigger client-side notification
+            shopName: newShop.name
         }, { status: 201 });
 
     } catch (error: any) {

@@ -11,6 +11,7 @@ interface Product {
     id: string;
     name: string;
     price: number;
+    unit?: string;
     stock: number;
     category: string;
     images: string[];
@@ -50,7 +51,7 @@ export default function ProductActionRow({ product, BASE_URL }: { product: Produ
         }
     };
     
-    const formattedPrice = `Rp${product.price.toLocaleString('id-ID')}`;
+    const formattedPrice = `Rp${product.price.toLocaleString('id-ID')}${product.unit ? `/${product.unit}` : ''}`;
     const formattedDate = new Date(product.createdAt).toLocaleDateString('id-ID');
 
     return (

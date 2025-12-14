@@ -129,8 +129,25 @@ export async function POST(request: NextRequest) {
 
         const seller = await User.findById(sellerId).select('role shopId'); 
         
-        if (!seller || seller.role !== 'seller' || !seller.shopId) {
-            return NextResponse.json({ error: "Akses ditolak: Anda bukan seller yang terotorisasi atau toko belum disetujui" }, { status: 403 });
+        console.log('[DEBUG] Seller data:', {
+            sellerId,
+            seller: seller ? {
+                id: seller._id,
+                role: seller.role,
+                shopId: seller.shopId
+            } : null
+        });
+        
+        if (!seller) {
+            return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+        }
+        
+        if (seller.role !== 'seller') {
+            return NextResponse.json({ error: `Akses ditolak: Role Anda adalah ${seller.role}, bukan seller` }, { status: 403 });
+        }
+        
+        if (!seller.shopId) {
+            return NextResponse.json({ error: "Akses ditolak: Toko belum disetujui atau shopId tidak ditemukan. Hubungi admin." }, { status: 403 });
         }
         
         // 2. Validasi Data Produk
@@ -149,6 +166,7 @@ export async function POST(request: NextRequest) {
             name: body.name,
             description: body.description,
             price: Number(body.price),
+            unit: body.unit || "kg", // Add unit field with default
             category: body.category || "mentah",
             
             // [SKEMA FIX] Model menggunakan countInStock

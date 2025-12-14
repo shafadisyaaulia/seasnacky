@@ -25,6 +25,7 @@ export default function AddProductPage() {
   const [form, setForm] = useState({
     name: "",
     price: "",
+    unit: "kg",
     stock: "1", 
     category: "mentah",
     description: "",
@@ -195,9 +196,9 @@ export default function AddProductPage() {
               Detail Produk
             </h2>
           
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Input Nama */}
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
                   Nama Produk <span className="text-red-500">*</span>
                 </label>
@@ -227,7 +228,37 @@ export default function AddProductPage() {
                 />
               </div>
 
-              {/* Input Stok */}
+              {/* Input Satuan */}
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">
+                  Satuan <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select 
+                    className="w-full p-3.5 border-2 border-gray-300 rounded-lg outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 bg-white appearance-none transition-all cursor-pointer"
+                    value={form.unit}
+                    onChange={(e) => setForm({...form, unit: e.target.value})}
+                  >
+                    <option value="kg">Kilogram (kg)</option>
+                    <option value="gram">Gram (g)</option>
+                    <option value="pcs">Pcs</option>
+                    <option value="pack">Pack</option>
+                    <option value="box">Box</option>
+                    <option value="liter">Liter (L)</option>
+                    <option value="ml">Mililiter (mL)</option>
+                    <option value="dozen">Lusin</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Input Stok - Full width below */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold mb-2 text-gray-700">
                   Stok Produk <span className="text-red-500">*</span>

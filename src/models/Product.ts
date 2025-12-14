@@ -9,6 +9,7 @@ export interface IProduct extends Document {
     name: string;
     slug: string; 
     price: number;
+    unit: string;
     category: 'mentah' | 'olahan'; 
     description: string;
     images: string[]; 
@@ -48,6 +49,12 @@ const ProductSchema: Schema = new mongoose.Schema(
             type: Number, 
             required: true,
             min: 0
+        },
+        unit: {
+            type: String,
+            required: true,
+            default: 'kg',
+            enum: ['kg', 'gram', 'pcs', 'pack', 'box', 'liter', 'ml', 'dozen']
         },
         category: { 
             type: String, 

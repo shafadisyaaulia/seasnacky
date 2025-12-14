@@ -81,6 +81,44 @@ export function notifyAddedToCart(productName: string, quantity: number = 1) {
   playNotificationSound();
 }
 
+export function notifyShopCreated(shopName: string) {
+  showNotification("🏪 Toko Berhasil Dibuat!", {
+    body: `${shopName}\nToko Anda sedang menunggu persetujuan admin. Anda akan menerima notifikasi setelah disetujui.`,
+    tag: 'shop-created',
+    requireInteraction: true,
+    icon: '/logo.png',
+    badge: '/logo.png',
+  });
+
+  playNotificationSound();
+}
+
+export function notifyShopApproved(shopName: string) {
+  showNotification("✅ Toko Disetujui!", {
+    body: `Selamat! Toko "${shopName}" telah disetujui oleh admin.\nAnda sekarang dapat mulai berjualan.`,
+    tag: 'shop-approved',
+    requireInteraction: true,
+    icon: '/logo.png',
+    badge: '/logo.png',
+    data: { type: 'shop-approved' },
+  });
+
+  playNotificationSound();
+}
+
+export function notifyShopRejected(shopName: string, reason?: string) {
+  showNotification("❌ Toko Ditolak", {
+    body: `Mohon maaf, toko "${shopName}" ditolak oleh admin.${reason ? `\nAlasan: ${reason}` : '\nSilakan hubungi admin untuk informasi lebih lanjut.'}`,
+    tag: 'shop-rejected',
+    requireInteraction: true,
+    icon: '/logo.png',
+    badge: '/logo.png',
+    data: { type: 'shop-rejected' },
+  });
+
+  playNotificationSound();
+}
+
 function playNotificationSound() {
   try {
     const audio = new Audio('/notification.mp3'); // Bisa tambahkan file sound

@@ -11,6 +11,7 @@ interface Product {
   _id: string;
   name: string;
   price: number;
+  unit?: string;
   category: string;
   description: string;
   images: string[];
@@ -96,7 +97,7 @@ export default function MarketplacePage() {
                   <h3 className="font-semibold text-gray-900 line-clamp-1 mb-1">{product.name}</h3>
                   <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-grow">{product.description}</p>
                   <div className="mt-auto space-y-2">
-                    <div className="text-lg font-bold text-blue-600 mb-3">Rp {product.price.toLocaleString("id-ID")}</div>
+                    <div className="text-lg font-bold text-blue-600 mb-3">Rp {product.price.toLocaleString("id-ID")}{product.unit ? `/${product.unit}` : ""}</div>
                     
                     {/* Button Lihat Detail */}
                     <Link 

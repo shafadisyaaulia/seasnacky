@@ -188,7 +188,7 @@ export default function ProductDetailPage({
               <div className="mb-6">
                 <p className="text-sm text-gray-500 mb-1">Harga</p>
                 <p className="text-4xl font-bold text-blue-600">
-                  {formatCurrency(product.price)}
+                  {formatCurrency(product.price)}{product.unit ? `/${product.unit}` : ""}
                 </p>
               </div>
 
