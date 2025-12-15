@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     // VALIDASI: Cek apakah address lengkap
-    if (!payload.address || payload.address.trim() === "") {
+    if (!payload.shippingAddress || payload.shippingAddress.trim() === "") {
       logger.error(`Checkout gagal: Alamat pengiriman kosong`, {
         source: "api/orders/checkout",
         userId,
