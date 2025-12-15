@@ -100,11 +100,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          clean: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          # Disable cache to force fresh install
+          # cache: 'npm'
+
+      - name: Clear npm cache
+        run: npm cache clean --force
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
