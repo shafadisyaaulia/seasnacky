@@ -5,6 +5,7 @@ const LogSchema = new mongoose.Schema({
   message: { type: String, required: true },
   source: { type: String }, 
   timestamp: { type: Date, default: Date.now },
+  environment: { type: String, default: "development" }, // Track environment (development, preview, production)
 });
 
 // PERBAIKAN DISINI:

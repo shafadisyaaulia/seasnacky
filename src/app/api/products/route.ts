@@ -155,6 +155,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Semua field wajib diisi: Nama, Harga, Deskripsi, Gambar, dan Stok" }, { status: 400 });
         }
 
+        // [DEBUG] Log body untuk memeriksa unit
+        console.log('[DEBUG] Request body:', {
+            name: body.name,
+            price: body.price,
+            unit: body.unit,
+            category: body.category,
+            stock: body.stock
+        });
+
         // 3. [SKEMA] Buat slug dari nama produk
         const baseSlug = slugify(body.name, { lower: true, strict: true });
         

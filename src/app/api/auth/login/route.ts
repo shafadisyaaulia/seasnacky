@@ -5,7 +5,8 @@ import { z } from "zod";
 import bcrypt from "bcryptjs"; 
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
-import { createSessionResponse } from "@/lib/session"; 
+import { createSessionResponse } from "@/lib/session";
+import logger from "@/lib/logger"; 
 
 const LoginSchema = z.object({
     email: z.string().email(),
@@ -34,6 +35,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Email atau password salah" }, { status: 401 });
         }
 
+        // Log successful login
+        logger.info(`User ${user.name || user.email} login berhasil`, {
+            source: "API Auth Login",
+            userId: user._id.toString(),
+            email: user.email,
+            role: user.role,
+        });
+
         // 5. Buat Session & Cookie
         const payload = {
             // KRITIS: Gunakan 'sub' (subject) untuk ID User, karena getAuthUser membaca ini
@@ -58,6 +67,11 @@ export async function POST(req: Request) {
 
     } catch (error: any) {
         console.error("Login Error:", error);
+        logger.error(`Login error: ${error.message}`, {
+            source: "API Auth Login",
+            error: error.message,
+            stack: error.stack,
+        });
         return NextResponse.json({ error: "Terjadi kesalahan server" }, { status: 500 });
     }
 }

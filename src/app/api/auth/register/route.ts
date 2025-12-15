@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
+import logger from "@/lib/logger";
 
 export async function POST(req: Request) {
     try {
@@ -44,6 +45,12 @@ export async function POST(req: Request) {
         const userResponse = newUser.toObject();
         delete userResponse.password;
 
+        logger.info(`User baru terdaftar: ${newUser.name || newUser.email}`, {
+            source: "API Auth Register",
+            userId: newUser._id.toString(),
+            email: newUser.email,
+        });
+
         return NextResponse.json(
             { 
                 message: "Registrasi berhasil", 
@@ -53,6 +60,12 @@ export async function POST(req: Request) {
         );
     } catch (error: any) {
         console.error("Register Error:", error);
+        
+        logger.error(`Registration error: ${error.message}`, {
+            source: "API Auth Register",
+            error: error.message,
+            stack: error.stack,
+        });
         
         // Tambahkan penanganan error validasi Mongoose untuk informasi lebih baik
         if (error.name === 'ValidationError') {

@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb";
 import Shop from "@/models/Shop";
 import User from "@/models/User";
 import { getAuthUser } from "@/lib/session";
+import logger from "@/lib/logger";
 
 export async function PATCH(
   request: NextRequest,
@@ -57,6 +58,14 @@ export async function PATCH(
         hasShop: true,
         shopId: shop._id  // Ensure shopId is set
       });
+      
+      logger.info(`Admin menyetujui toko: ${shop.name}`, {
+        source: "API Admin Shop Approve",
+        shopId: shop._id.toString(),
+        shopName: shop.name,
+        sellerId: shop.sellerId?.toString(),
+      });
+      
       notificationData.notifyShopApproved = true;
       notificationData.shopName = shop.name;
       notificationData.sellerId = shop.sellerId;
@@ -67,6 +76,14 @@ export async function PATCH(
         hasShop: false,
         shopId: null
       });
+      
+      logger.warn(`Admin menolak toko: ${shop.name}`, {
+        source: "API Admin Shop Reject",
+        shopId: shop._id.toString(),
+        shopName: shop.name,
+        sellerId: shop.sellerId?.toString(),
+      });
+      
       notificationData.notifyShopRejected = true;
       notificationData.shopName = shop.name;
       notificationData.sellerId = shop.sellerId;
@@ -74,8 +91,13 @@ export async function PATCH(
 
     return NextResponse.json(notificationData);
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating shop:", error);
+    logger.error(`Error updating shop status: ${error.message}`, {
+      source: "API Admin Shop Update",
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }

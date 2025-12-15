@@ -4,6 +4,7 @@ import Order from "@/models/Order";   // Model Order MongoDB
 import Product from "@/models/Product"; // Model Product MongoDB
 import Shop from "@/models/Shop";     // Model Shop MongoDB
 import { getAuthUser } from "@/lib/session"; // Cek User Login
+import logger from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -119,6 +120,13 @@ export async function POST(request: NextRequest) {
       itemsTotal: totalAmount
     });
 
+    logger.info(`Order baru dibuat oleh ${buyerName}`, {
+      source: "API Orders Checkout",
+      orderId: newOrder._id.toString(),
+      totalAmount: finalTotal,
+      itemCount: orderItems.length,
+    });
+
     return NextResponse.json({
       id: newOrder._id.toString(),
       orderId: newOrder._id.toString(),
@@ -129,6 +137,11 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error("Checkout DB Error:", error);
+    logger.error(`Checkout error: ${error.message}`, {
+      source: "API Orders Checkout",
+      error: error.message,
+      stack: error.stack,
+    });
     return NextResponse.json({ message: "Gagal checkout", error: error.message }, { status: 500 });
   }
 }

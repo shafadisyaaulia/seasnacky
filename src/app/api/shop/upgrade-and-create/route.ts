@@ -5,6 +5,7 @@ import connectDB from "@/lib/mongodb";
 import Shop from "@/models/Shop";
 import User from "@/models/User";
 import mongoose from "mongoose";
+import logger from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,12 @@ export async function POST(request: NextRequest) {
         });
 
         // 5. Sukses - Send notification event
+        logger.info(`User ${user.name || user.email} membuka toko: ${newShop.name}`, {
+            source: "API Shop Create",
+            userId: userId,
+            shopName: newShop.name,
+        });
+
         return NextResponse.json({
             message: "Pendaftaran toko berhasil diajukan. Menunggu persetujuan Admin!",
             shop: newShop,
@@ -63,6 +70,12 @@ export async function POST(request: NextRequest) {
 
     } catch (error: any) {
         console.error("Error Open Shop (Pending Approval):", error);
+        
+        logger.error(`Error saat membuat toko: ${error.message}`, {
+            source: "API Shop Create",
+            error: error.message,
+            stack: error.stack,
+        });
         
         if (error.code === 11000) { 
             return NextResponse.json({ error: "User ini sudah pernah mendaftar toko (Key Duplikat)." }, { status: 409 });

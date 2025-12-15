@@ -10,6 +10,7 @@ interface LogEntry {
   message: string;
   source?: string;
   timestamp: string;
+  environment?: string;
 }
 
 export default function LogsPage() {
