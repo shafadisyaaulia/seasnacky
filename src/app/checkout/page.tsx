@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useNotification } from "@/context/NotificationContext";
 import Image from "next/image";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isDirect = searchParams.get("direct") === "true";
@@ -323,6 +323,14 @@ export default function CheckoutPage() {
         </aside>
       </div>
     </main>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto py-12 px-4 text-center">Loading checkout...</div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }
 
