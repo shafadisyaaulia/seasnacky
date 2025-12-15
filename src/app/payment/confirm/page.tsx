@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import toast from "react-hot-toast";
 
-export default function PaymentConfirmPage() {
+function PaymentConfirmContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
@@ -166,5 +166,13 @@ export default function PaymentConfirmPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function PaymentConfirmPage() {
+  return (
+    <Suspense fallback={<div className="max-w-2xl mx-auto py-12 px-4 text-center">Loading...</div>}>
+      <PaymentConfirmContent />
+    </Suspense>
   );
 }

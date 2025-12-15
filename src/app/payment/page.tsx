@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
 
-export default function PaymentPage() {
+function PaymentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
@@ -400,5 +400,13 @@ export default function PaymentPage() {
         </aside>
       </div>
     </main>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto py-12 px-4 text-center">Loading...</div>}>
+      <PaymentContent />
+    </Suspense>
   );
 }
