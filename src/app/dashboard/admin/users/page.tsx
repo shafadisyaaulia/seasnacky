@@ -166,9 +166,9 @@ export default function AdminUsersPage() {
                           onChange={(e) => setNewRole(e.target.value)}
                           className="px-3 py-1 text-xs font-bold rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500"
                         >
-                          <option value="BUYER">BUYER</option>
-                          <option value="SELLER">SELLER</option>
-                          <option value="ADMIN">ADMIN</option>
+                          <option value="buyer">buyer</option>
+                          <option value="seller">seller</option>
+                          <option value="admin">admin</option>
                         </select>
                       ) : (
                         <span
@@ -180,7 +180,7 @@ export default function AdminUsersPage() {
                               : "bg-blue-100 text-blue-700"
                           }`}
                         >
-                          {user.role}
+                          {user.role.toLowerCase()}
                         </span>
                       )}
                     </td>

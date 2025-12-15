@@ -9,7 +9,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Ikhtisar", href: "/dashboard/seller", badge: null },
   { icon: Package, label: "Produk", href: "/dashboard/seller/products", badge: "products" },
   { icon: ShoppingBag, label: "Pesanan Masuk", href: "/dashboard/seller/orders", badge: "orders" },
-  { icon: BookOpen, label: "Konten Edukasi", href: "/dashboard/seller/content", badge: null },
+  { icon: BookOpen, label: "Resep Saya", href: "/dashboard/seller/content", badge: null },
   { icon: DollarSign, label: "Pendapatan", href: "/dashboard/seller/revenue", badge: null },
 ];
 

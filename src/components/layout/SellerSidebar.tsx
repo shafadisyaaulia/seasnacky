@@ -8,7 +8,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Ikhtisar", href: "/dashboard/seller" },
   { icon: Package, label: "Produk Saya", href: "/dashboard/seller/products" },
   { icon: ShoppingBag, label: "Pesanan Masuk", href: "/dashboard/seller/orders" },
-  { icon: BookOpen, label: "Konten Edukasi", href: "/dashboard/seller/content" },
+  { icon: BookOpen, label: "Resep Saya", href: "/dashboard/seller/content" },
 ];
 
 export default function SellerSidebar() {

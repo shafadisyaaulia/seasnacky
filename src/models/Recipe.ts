@@ -14,6 +14,9 @@ const RecipeSchema = new mongoose.Schema({
   // Resep ini merekomendasikan produk apa?
   relatedProducts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
   
+  // Author/Pemilik resep
+  authorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  
   createdAt: { type: Date, default: Date.now },
 });
 

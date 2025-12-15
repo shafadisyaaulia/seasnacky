@@ -12,6 +12,7 @@ export default function CreateRecipePage() {
   const { showNotification } = useNotification();
   const [sellerProducts, setSellerProducts] = useState<any[]>([]);
   const [myRecipes, setMyRecipes] = useState<any[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState<{ isEditing: boolean; recipeId: string | null }>({
     isEditing: false,
     recipeId: null,
@@ -31,35 +32,36 @@ export default function CreateRecipePage() {
   
   const [form, setForm] = useState(initialFormState);
 
-  // 1. Ambil Daftar Produk Seller & Resep yang sudah dibuat
+  // 1. Get user ID dan fetch data
   useEffect(() => {
-    const fetchMyProducts = async () => {
+    const fetchUserAndData = async () => {
       try {
-        const res = await fetch("/api/products?t=" + Date.now()); 
-        const data = await res.json();
-        
-        if (Array.isArray(data)) {
-            setSellerProducts(data);
+        // Get current user
+        const userRes = await fetch("/api/me");
+        const userData = await userRes.json();
+        if (userData.id) {
+          setUserId(userData.id);
+          
+          // Fetch products (sudah terfilter by seller di API products)
+          const productsRes = await fetch("/api/products?t=" + Date.now()); 
+          const productsData = await productsRes.json();
+          if (Array.isArray(productsData)) {
+            setSellerProducts(productsData);
+          }
+          
+          // Fetch only MY recipes
+          const recipesRes = await fetch(`/api/recipes?authorId=${userData.id}&t=` + Date.now());
+          const recipesData = await recipesRes.json();
+          if (Array.isArray(recipesData)) {
+            setMyRecipes(recipesData);
+          }
         }
       } catch (error) {
-        console.error("Gagal ambil produk", error);
+        console.error("Gagal ambil data", error);
       }
     };
 
-    const fetchMyRecipes = async () => {
-      try {
-        const res = await fetch("/api/recipes?t=" + Date.now());
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setMyRecipes(data);
-        }
-      } catch (error) {
-        console.error("Gagal ambil resep", error);
-      }
-    };
-
-    fetchMyProducts();
-    fetchMyRecipes();
+    fetchUserAndData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,6 +82,7 @@ export default function CreateRecipePage() {
         ...form,
         ingredients: ingredientsArray,
         instructions: instructionsArray,
+        authorId: userId, // Include author ID
       };
 
       let res;
@@ -111,8 +114,8 @@ export default function CreateRecipePage() {
       setForm(initialFormState);
       setEditMode({ isEditing: false, recipeId: null });
 
-      // ✅ Refresh list resep
-      const recipesRes = await fetch("/api/recipes?t=" + Date.now());
+      // ✅ Refresh list resep (hanya milik user ini)
+      const recipesRes = await fetch(`/api/recipes?authorId=${userId}&t=` + Date.now());
       const data = await recipesRes.json();
       if (Array.isArray(data)) {
         setMyRecipes(data);
@@ -129,6 +132,13 @@ export default function CreateRecipePage() {
 
   const handleEditRecipe = (recipe: any) => {
     // Pre-fill form dengan data resep yang akan diedit
+    // Extract relatedProductId from relatedProducts array
+    const relatedProductId = recipe.relatedProducts && recipe.relatedProducts.length > 0
+      ? (typeof recipe.relatedProducts[0] === 'string' 
+          ? recipe.relatedProducts[0] 
+          : recipe.relatedProducts[0]._id || recipe.relatedProducts[0])
+      : "";
+
     setForm({
       title: recipe.title,
       description: recipe.description,
@@ -137,7 +147,7 @@ export default function CreateRecipePage() {
       time: recipe.time,
       ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients.join("\n") : recipe.ingredients,
       instructions: Array.isArray(recipe.instructions) ? recipe.instructions.join("\n") : recipe.instructions,
-      relatedProductId: recipe.relatedProductId || "",
+      relatedProductId: relatedProductId,
     });
     setEditMode({ isEditing: true, recipeId: recipe._id });
     
@@ -167,7 +177,7 @@ export default function CreateRecipePage() {
   return (
     <div className="max-w-6xl mx-auto pb-20">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Konten Resep Saya</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Resep Saya</h1>
       </div>
 
       {/* List Resep yang Sudah Dibuat */}
