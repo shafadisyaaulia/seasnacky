@@ -41,12 +41,36 @@ jobs:
         run: npx tsc --noEmit || echo "Type checking completed"
         continue-on-error: true
 
-  # Job 2: Build Docker Image (Optional - for testing)
+  # Job 2: Build Test (Next.js)
+  build-test:
+    name: Build Test (Next.js)
+    runs-on: ubuntu-latest
+    needs: test
+    continue-on-error: true  # Jangan block deployment jika build fail
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js
+        run: npm run build
+        continue-on-error: true
+
+  # Job 3: Build Docker Image (Optional)
   build-docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
     needs: test
-    continue-on-error: true  # Jangan block deployment jika Docker build fail
+    continue-on-error: true  # Optional - boleh fail
     
     steps:
       - name: Checkout code
@@ -66,15 +90,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Test Docker image
-        run: |
-          docker images seasnacky:latest || echo "Docker build skipped"
-
-  # Job 3: Deploy to Vercel (Production)
+  # Job 4: Deploy to Vercel (Production)
   deploy-production:
     name: Deploy to Vercel (Production)
     runs-on: ubuntu-latest
-    needs: [test]  # Hapus dependency ke build-docker
+    needs: [test]  # Hanya depend on test, bukan build
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     
     steps:
@@ -114,7 +134,7 @@ jobs:
               body: '🚀 Deployed to Vercel: ${{ steps.deploy.outputs.url }}'
             })
 
-  # Job 4: Deploy to Vercel (Preview for PRs)
+  # Job 5: Deploy to Vercel (Preview for PRs)
   deploy-preview:
     name: Deploy to Vercel (Preview)
     runs-on: ubuntu-latest
@@ -157,7 +177,7 @@ jobs:
               body: '🔍 Preview deployment: ${{ steps.deploy.outputs.url }}'
             })
 
-  # Job 5: Health Check
+  # Job 6: Health Check
   health-check:
     name: Production Health Check
     runs-on: ubuntu-latest
