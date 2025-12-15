@@ -2,7 +2,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
-import logger from "@/lib/logger";
 
 // Konfigurasi Kunci Rahasia JWT (Harus sama dengan lib/session.ts)
 const secretKey = process.env.JWT_SECRET || "rahasia-negara-seasnacky";
@@ -58,13 +57,12 @@ export async function middleware(request: NextRequest) {
     // 3. Proteksi Halaman Admin (Membutuhkan role 'ADMIN')
     if (isAdminRoute && isAuthenticated) {
         if (userPayload?.role !== 'ADMIN' && userPayload?.role !== 'admin') {
-            logger.warning(`Unauthorized access attempt: Buyer/Seller mencoba akses Admin Dashboard`, {
-                source: "middleware",
+            // Log ke console saja (middleware tidak bisa akses DB)
+            console.warn('[MIDDLEWARE] Unauthorized access attempt:', {
                 userId: userPayload?.sub || userPayload?.id,
                 email: userPayload?.email,
                 role: userPayload?.role,
                 attemptedPath: path,
-                reason: "Insufficient permissions (not admin)"
             });
             return NextResponse.redirect(new URL("/dashboard", request.url));
         }
@@ -73,13 +71,12 @@ export async function middleware(request: NextRequest) {
     // 4. Proteksi Halaman Seller (Membutuhkan role 'SELLER')
     if (isSellerRoute && isAuthenticated) {
         if (userPayload?.role !== 'SELLER' && userPayload?.role !== 'seller') {
-            logger.warning(`Unauthorized access attempt: Buyer mencoba akses Seller Dashboard`, {
-                source: "middleware",
+            // Log ke console saja (middleware tidak bisa akses DB)
+            console.warn('[MIDDLEWARE] Unauthorized access attempt:', {
                 userId: userPayload?.sub || userPayload?.id,
                 email: userPayload?.email,
                 role: userPayload?.role,
                 attemptedPath: path,
-                reason: "Insufficient permissions (not seller)"
             });
             return NextResponse.redirect(new URL("/dashboard", request.url));
         }

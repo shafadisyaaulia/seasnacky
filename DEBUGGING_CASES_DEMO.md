@@ -122,21 +122,19 @@ User dengan role "buyer" mencoba mengakses halaman seller dashboard yang seharus
 ### Code yang Menghasilkan Log:
 
 ```typescript
-// src/middleware.ts
-if (isSellerRoute && isAuthenticated) {
-  if (userPayload?.role !== 'SELLER' && userPayload?.role !== 'seller') {
-    logger.warning(`Unauthorized access attempt: Buyer mencoba akses Seller Dashboard`, {
-      source: "middleware",
-      userId: userPayload?.sub || userPayload?.id,
-      email: userPayload?.email,
-      role: userPayload?.role,
-      attemptedPath: path,
-      reason: "Insufficient permissions (not seller)"
-    });
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
+// src/middleware.ts (console.warn karena Edge Runtime limitation)
+if (userPayload?.role !== 'SELLER' && userPayload?.role !== 'seller') {
+  console.warn('[MIDDLEWARE] Unauthorized access attempt:', {
+    userId: userPayload?.sub || userPayload?.id,
+    email: userPayload?.email,
+    role: userPayload?.role,
+    attemptedPath: path,
+  });
+  return NextResponse.redirect(new URL("/dashboard", request.url));
 }
 ```
+
+**Note:** Middleware menggunakan `console.warn` karena Edge Runtime tidak support Mongoose/MongoDB. Untuk production logging yang proper, bisa tambahkan client-side call ke `/api/log-access` setelah redirect.
 
 ### Security Benefits:
 - 🔒 Role-based access control (RBAC)
