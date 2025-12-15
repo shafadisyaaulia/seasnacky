@@ -36,6 +36,8 @@ export async function GET() {
         email: user.email,
         role: user.role, // Penting agar Header tahu ini USER atau SELLER
         image: user.image || "", // Avatar jika ada
+        hasShop: user.hasShop || false,
+        shopId: user.shopId ? user.shopId.toString() : null,
       },
     });
 

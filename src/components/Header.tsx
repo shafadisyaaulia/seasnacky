@@ -24,17 +24,38 @@ export default function Header() {
 
   // Ambil Data User (Termasuk Role)
   useEffect(() => {
-    fetch("/api/me")
-      .then((r) => r.json())
-      .then((json) => {
+    const fetchUser = async () => {
+      try {
+        const r = await fetch("/api/me");
+        const json = await r.json();
         console.log("API /api/me response:", json); // Debug log
         setUser(json?.data ?? null);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Error fetching user:", err);
         setUser(null);
-      });
-  }, []);
+      }
+    };
+
+    fetchUser();
+
+    // Periodic check setiap 60 detik untuk detect role changes
+    const interval = setInterval(async () => {
+      if (user) {
+        const r = await fetch("/api/me");
+        const json = await r.json();
+        const newUser = json?.data;
+        
+        // If role changed, refresh session and reload
+        if (newUser && user.role !== newUser.role) {
+          console.log("Role changed detected, refreshing session...");
+          await fetch("/api/auth/refresh", { method: "POST" });
+          window.location.reload();
+        }
+      }
+    }, 60000); // Check every 60 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.role]);
 
   // Tutup dropdown kalau klik di luar
   useEffect(() => {

@@ -37,18 +37,24 @@ export default function ShopStatusChecker() {
             notifyShopApproved(data.shopName);
             hasNotifiedRef.current = true;
             
-            // Reload page after showing notification to update UI
+            // Refresh session to update JWT token with new role
+            await fetch("/api/auth/refresh", { method: "POST" });
+            
+            // Reload page after refreshing session to update UI
             setTimeout(() => {
               window.location.reload();
-            }, 3000);
+            }, 2000);
           } else if (data.shopStatus === "suspended" && previousStatusRef.current === "pending") {
             notifyShopRejected(data.shopName);
             hasNotifiedRef.current = true;
             
-            // Reload page after showing notification
+            // Refresh session to revert role back to buyer
+            await fetch("/api/auth/refresh", { method: "POST" });
+            
+            // Reload page after refreshing session
             setTimeout(() => {
               window.location.reload();
-            }, 3000);
+            }, 2000);
           }
           
           previousStatusRef.current = data.shopStatus;
