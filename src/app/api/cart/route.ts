@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Cart from "@/models/Cart";
+import Product from "@/models/Product";
+import logger from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +66,35 @@ export async function POST(request: NextRequest) {
       console.error("Invalid productId format:", productId);
       return NextResponse.json(
         { message: "Format productId tidak valid" },
+        { status: 400 }
+      );
+    }
+
+    // VALIDASI: Cek apakah produk ada dan stok mencukupi
+    const product = await Product.findById(productObjectId);
+    if (!product) {
+      logger.error(`Gagal tambah ke cart: Produk tidak ditemukan`, {
+        source: "api/cart",
+        productId,
+        userId
+      });
+      return NextResponse.json(
+        { message: "Produk tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+
+    if (product.stock < quantity) {
+      logger.warning(`Gagal tambah ke cart: Stok tidak mencukupi - ${product.name}`, {
+        source: "api/cart",
+        productId,
+        productName: product.name,
+        requestedQty: quantity,
+        availableStock: product.stock,
+        userId
+      });
+      return NextResponse.json(
+        { message: `Stok ${product.name} hanya tersisa ${product.stock} unit` },
         { status: 400 }
       );
     }

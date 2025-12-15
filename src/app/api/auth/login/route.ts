@@ -27,11 +27,22 @@ export async function POST(req: Request) {
 
         const user = await User.findOne({ email });
         if (!user) {
+            logger.error(`Login gagal: Email tidak ditemukan - ${email}`, {
+                source: "API Auth Login",
+                email: email,
+                reason: "Email tidak terdaftar"
+            });
             return NextResponse.json({ error: "Email atau password salah" }, { status: 401 });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
+            logger.error(`Login gagal: Password salah untuk ${email}`, {
+                source: "API Auth Login",
+                email: email,
+                userId: user._id.toString(),
+                reason: "Password tidak cocok"
+            });
             return NextResponse.json({ error: "Email atau password salah" }, { status: 401 });
         }
 

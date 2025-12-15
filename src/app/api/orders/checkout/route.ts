@@ -80,7 +80,23 @@ export async function POST(request: NextRequest) {
     }
 
     if (orderItems.length === 0) {
+      logger.error(`Checkout gagal: Keranjang kosong`, {
+        source: "api/orders/checkout",
+        userId,
+        buyerName
+      });
       return NextResponse.json({ message: "Tidak ada item untuk checkout" }, { status: 400 });
+    }
+
+    // VALIDASI: Cek apakah address lengkap
+    if (!payload.address || payload.address.trim() === "") {
+      logger.error(`Checkout gagal: Alamat pengiriman kosong`, {
+        source: "api/orders/checkout",
+        userId,
+        buyerName,
+        itemsCount: orderItems.length
+      });
+      return NextResponse.json({ message: "Alamat pengiriman harus diisi" }, { status: 400 });
     }
     
     // Fallback sellerId jika tidak ada

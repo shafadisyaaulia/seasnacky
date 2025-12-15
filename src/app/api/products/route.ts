@@ -6,7 +6,8 @@ import Product from "@/models/Product";
 import User from "@/models/User";
 import { cookies } from "next/headers"; 
 import jwt from 'jsonwebtoken'; 
-import slugify from 'slugify'; 
+import slugify from 'slugify';
+import logger from '@/lib/logger'; 
 
 // Paksa agar API ini selalu fresh (tidak di-cache statis)
 export const dynamic = "force-dynamic";
