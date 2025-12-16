@@ -14,9 +14,6 @@
 - **Shafa Disya Aulia** (2308107010002)
 - **Akrimah Usri** (2308107010009)
 
-**Mata Kuliah:** Pemrograman Orientasi Platform (POPL) - Semester 5  
-**Link Docker Hub:** [akrimahusri/seasnacky](https://hub.docker.com/repository/docker/akrimahusri/seasnacky/general)
-
 ---
 
 ## 📋 Daftar Isi
