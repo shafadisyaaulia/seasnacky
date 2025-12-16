@@ -106,7 +106,7 @@ SeaSnacky adalah platform marketplace yang memungkinkan penjual produk snack lok
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-username/seasnacky.git
+git clone https://github.com/shafadisyaaulia/seasnacky.git
 cd seasnacky
 ```
 
