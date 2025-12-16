@@ -420,7 +420,7 @@ Project ini dibuat untuk keperluan akademik - Mata Kuliah POPL, Universitas Sriw
 **Shafa Disya Aulia** - 2308107010002  
 **Akrimah Usri** - 2308107010009
 
-Project Link: [https://github.com/your-username/seasnacky](https://github.com/your-username/seasnacky)  
+Project Link: [https://github.com/shafadisyaaulia/seasnacky.git](https://github.com/shafadisyaaulia/seasnacky.git)  
 Live Demo: [https://seasnacky.vercel.app](https://seasnacky.vercel.app)
 
 ---
